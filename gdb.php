@@ -7,6 +7,7 @@
 	$gdbcomm->start();
 	$gdbcomm->get_locals();
 	$gdbcomm->take_step();
+	$gdbcomm->take_step();
 	$gdbcomm->close();
 	$end_time = microtime(true);
 	$total_time = $end_time - $start_time;

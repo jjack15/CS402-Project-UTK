@@ -12,6 +12,7 @@ class GDBComm
     private $descriptor;
 	private $process;
 	private $stopped = "*stopped";
+	private $current_line;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -89,16 +90,35 @@ class GDBComm
 		$fout = fwrite($this->pipes[0], "-exec-step\r\n");
 		print "fout: $fout\n";
 		while($f = fgets($this->pipes[1])) {
+			print "\n$f";
 			if (substr($f, 0, 8) == "*stopped") {
 				print "Starts with stopped!\n";
-				//preg_match($
-				break;
+				$return = preg_match('/file="([A-Za-z0-9._]*)"/', $f, $matches);
+				if (isset($matches[1])) {
+					print "\nRETURN: $return $matches[1]\n";
+					print_r($matches);
+					if ($matches[1] == $this->source_file) {
+						preg_match('/line="([0-9]*)"/', $f, $line_match);
+						print_r($line_match);
+						$this->current_line = $line_match[1];
+						break;	
+					}
+				}	
 			}
+			else {
+				print "Standard output: $f";
+			}
+			//fgets($this->pipes[1]);
 		}
-		print "\n$f";
+		//print "\n$f";
 		fgets($this->pipes[1]);
 	}
-		
+	
+	/* Get the current line that the is being debugged */
+	function get_current_line() {
+		return $this->current_line;	
+	}
+
 	function close() {
 		fclose($this->pipes[1]);
 		proc_close($this->process);
