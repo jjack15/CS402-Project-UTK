@@ -6,6 +6,7 @@
 	/* Start GDB with the program running in debug mode */
 	$gdbcomm->start();
 	$gdbcomm->get_locals();
+	$gdbcomm->set_watchpoint("x");
 	$gdbcomm->take_step();
 	$gdbcomm->take_step();
 	$gdbcomm->close();

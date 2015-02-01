@@ -84,11 +84,24 @@ class GDBComm
 		print $f;
 	}
 	
+	function set_watchpoint($variable) {
+        print "\n In set watchpoint \n";
+        $fout = fwrite($this->pipes[0], "-break-watch $variable\r\n");
+        print "After writing $fout\n";
+		$f1 = fgets($this->pipes[1]);
+        print "After the first fgets()\n";
+		$f2 = fgets($this->pipes[1]);
+        if ((substr($f1, 0, 5) == "^done") && (substr($f2, 0, 5) == "(gdb)")) {
+            print "\nWe did it!\n";
+        }
+    }
+	
 	/* Take a *step* through the code. After calling this function, you must read the output and see if any variables were changed or if the frame has changed */
 	function take_step() {
 		print "\nIn take step\n";
 		$fout = fwrite($this->pipes[0], "-exec-step\r\n");
 		print "fout: $fout\n";
+		//set_watchpoint("x");
 		while($f = fgets($this->pipes[1])) {
 			print "\n$f";
 			if (substr($f, 0, 8) == "*stopped") {
@@ -112,7 +125,7 @@ class GDBComm
 		}
 		//print "\n$f";
 		fgets($this->pipes[1]);
-	}
+	}	
 	
 	/* Get the current line that the is being debugged */
 	function get_current_line() {
