@@ -39,4 +39,8 @@ The `start` method will actually call gdb and begin the debugging process, as th
 
 	$this->process = proc_open("gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
 	
-`$this->descriptor` is an array that describes the pipes that will be supplied to `$this->pipes`. In this case, `$this->pipes[0]` provides stdout for the gdb process, `this->pipes[1]` provides stdin, and `$this->pipes[2]` provides stderr.
+`$this->descriptor` is an array that describes the pipes that will be supplied to `$this->pipes`. In this case, `$this->pipes[0]` provides stdout for the gdb process, `$this->pipes[1]` provides stdin, and `$this->pipes[2]` provides stderr.
+
+This means that if you want to send a command to gdb you will write to `$this->pipes[1]`, and if you want to read output from that command you can read from `$this->pipes[0]`. For example, when we first start gdb, it will output a bunch of lines that we don't need (try running GDB with the test program to see). This means that we need a loop to read each line until the end. How do we know when the output is finished? GDB/MI helps us out with this by starting the last line with special characters such as "done" or "stopped".
+
+In this case, the output will stop with ~"done." then a newline symbol. In `start`, we have a loop that calls `fgets` on the stdout pipe to get lines of output, check if they start with ~"done", and keep going if not. If it does start with the done characters, we still need to call `fgets` again because GDB/MI will spit out another line that reads "(gdb)" (again, try this). Once we process that line, we are now ready to input a line.
