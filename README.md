@@ -33,3 +33,6 @@ GDBComm takes the user's .cpp file name as its only argument (so far). For now, 
 
 ### Compile()
 The compile method will call use a call to exec() to execute g++ on the desired program with the -g option to enable its use in GDB.
+
+### Start()
+The start method will actually call gdb and begin the debugging process, as the name implies. Of note is the call to proc_open.
