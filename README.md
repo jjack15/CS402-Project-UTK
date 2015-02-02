@@ -24,3 +24,9 @@ Step to next line
 	-exec-step
 
 You can view the full documentation [here](https://sourceware.org/gdb/onlinedocs/gdb/GDB_002fMI.html#GDB_002fMI).
+
+## GDBComm
+GDBComm is the main class that compiles the user's program, executes gdb, and gets the output back to the frontend.
+
+### Compile()
+The compile method will call use a call to exec() to execute g++ on the desired program with the -g option to enable its use in GDB.
