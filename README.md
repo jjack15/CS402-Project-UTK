@@ -28,5 +28,8 @@ You can view the full documentation [here](https://sourceware.org/gdb/onlinedocs
 ## GDBComm
 GDBComm is the main class that compiles the user's program, executes gdb, and gets the output back to the frontend.
 
+### Constructor
+GDBComm takes the user's .cpp file name as its only argument (so far). For now, in gdb.php it is hardcoded as "test.cpp" in the future, this will be a time-based filename that will be unique for every time code is generated. Once the constructor is called, it assigns the file to the source file property, it makes the executable file name from that (just take off .cpp) and sets up its pipes. I will explain this use later in the start() section.
+
 ### Compile()
 The compile method will call use a call to exec() to execute g++ on the desired program with the -g option to enable its use in GDB.
