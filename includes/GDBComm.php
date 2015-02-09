@@ -63,6 +63,7 @@ class GDBComm
         while ($f = fgets($this->pipes[1])) {
             //print $f;
             if (substr($f, 0, 8) == "*stopped") {
+                
                 break;
             }
         }
@@ -124,8 +125,11 @@ class GDBComm
         //set_watchpoint("x");
         while($f = fgets($this->pipes[1])) {
             print "\n$f";
+            /* Detect when the execution of step has stopped */
             if (substr($f, 0, 8) == "*stopped") {
-                print "Starts with stopped!\n";
+                $reason_return = preg_match('/reason="([A-Za-z0-9\\-._]*)"/', $f, $matches);
+                print "REASON: \n";
+                print_r($matches);
                 $return = preg_match('/file="([A-Za-z0-9._]*)"/', $f, $matches);
                 if (isset($matches[1])) {
                     print "\nRETURN: $return $matches[1]\n";
@@ -146,6 +150,10 @@ class GDBComm
         //print "\n$f";
         fgets($this->pipes[1]);
     }	
+
+    function update_local($var_name, $var_value) {
+        $this->local_vars[$var_name] = $var_value;
+    }
 
     /* Get the current line that the is being debugged */
     function get_current_line() {
