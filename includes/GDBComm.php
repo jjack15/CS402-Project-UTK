@@ -1,5 +1,5 @@
 <?php
-
+require_once("LocalVar.php");
 /* This class is used for all communication to the GDB
    process running, including compilation of the target
    program, starting GDB, and quitting GDB */
@@ -13,6 +13,7 @@ class GDBComm
     private $process;
     private $stopped = "*stopped";
     private $current_line;
+    private $local_vars;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -73,6 +74,8 @@ class GDBComm
 
     /* Get local variables on the stack, and record them into the class */
     function get_locals() {
+        print "In get_locals()\n"; 
+        $this->local_vars = array();
         $fout = fwrite($this->pipes[0], "-stack-list-locals --skip-unavailable 1\r\n");
         //print "fout for locals: $fout\n";
         $f = fgets($this->pipes[1]);
@@ -80,6 +83,23 @@ class GDBComm
         $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_]*)/', $f, $matches);
         //print "Any matches? $result\n";
         print_r($matches);
+        $var_names = $matches[1];
+        $var_values = $matches[2];
+        $i = 0;
+        foreach ($var_names as $var_name) {
+            $new_local = new LocalVar($var_name);
+            array_push($this->local_vars, $new_local);
+            print "i = $i\n";
+            $i++;
+        }
+        $i = 0;
+        foreach ($var_values as $var_value) {
+            $new_local = $this->local_vars[$i];
+            $new_local->set_value($var_value);
+            $i++;
+        }
+        print "Matches: $vars[0]\n";
+        print_r($this->local_vars);
         $f = fgets($this->pipes[1]);
         print $f;
     }
