@@ -404,7 +404,7 @@ $(document).ready(function() {
   }
   else {
     // select a canned example on start-up:
-    exampleCallback(examplesDir+"(Default).java")();
+    exampleCallback(examplesDir+"Default.cpp")();
   }
 
   var loadExample = $.bbq.getState('sampleFile');
