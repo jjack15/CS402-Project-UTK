@@ -7,4 +7,7 @@ This step deals with compiling the user's program from a .cpp file.
 2. Capture output of this execution
 	* If error, save error, output to front end, and exit.
 3. Get globals from the executable file using nm
-4. Save the globals using nm
+4. Save the globals using nmmar
+
+## State: Initilization
+Insert break at main

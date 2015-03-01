@@ -3,6 +3,7 @@
 class LocalVar {
     private $name;
     private $value;
+    private $type;
 
     function __construct($in_name) {
         $this->name = $in_name;

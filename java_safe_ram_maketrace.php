@@ -11,7 +11,7 @@ or later. See LICENSE or visit: http://www.gnu.org/licenses/agpl.html
 See README for documentation.
 
 ******************************************************************************/
-
+/*
 $data = file_get_contents("jv-config.json");
 $config_error = "";
 if ($data == FALSE) {
@@ -102,6 +102,7 @@ $jv_cmd = $safeexec;
 foreach ($safeexec_args as $a=>$v) $jv_cmd .= " --$a $v ";
 $jv_cmd .= " $safeexec_exec_signal $java_in_jail";
 // -X commands don't use a space
+$jv_cmd = "";
 foreach ($java_args as $a=>$v) $jv_cmd .= " " . (substr($a, 0, 1)=='X' ? "-$a$v" : "-$a $v") . " ";
 $jv_cmd .= "traceprinter.InMemory";
 
@@ -145,7 +146,7 @@ CREATE TABLE IF NOT EXISTS `jv_history` (
 )
 
 In the future, it could make sense to cache anything that is not randomized.
-*/
+*/ /*
     {
       $con = mysqli_connect(config_get("db_host"), config_get("db_user"), 
                             config_get("db_password"), config_get("db_database"));
@@ -158,7 +159,7 @@ In the future, it could make sense to cache anything that is not randomized.
 
 
 // the main method
-function maketrace() {  
+function maketrace() {
   if (!array_key_exists('data', $_REQUEST))
     return visError("Error: http mangling? Could not find data variable.", 0, 0, "");
 
@@ -242,7 +243,89 @@ function maketrace() {
   return visError("Safeexec did not succeed:\n" . $se_stderr, 0, 0, $user_code, $se_stdout);
 }
 
+$new_json = '{"code":"public class ClassNameHere {\npublic static void main(String[] args) {\nint x = 4;\n}\n}", "stdin":"","trace"}';
+
 header("Content-type: text/plain; charset=utf-8");
 echo maketrace();
+*/
+/*$fp = fpopen('results.txt', 'w');
+//fwrite($fp, $data['user_script']);
+fclose($fp);
 
+$data = $data['user_script'];*/
+//$data = $_REQUEST['data'];
+function make_trace() {
+  $data = $_REQUEST['data'];
+  /*$fp = fpopen('results.txt', 'w');
+  /*fwrite($fp, $data['user_script']);
+  fclose($fp);*/
+  $fp = fopen('results.txt', 'w');
+  fwrite($fp, $data['user_script']);
+  $new_json = '{
+    "code": "#include <iostream>\n  public static void main(String[] args) {\n     int x = 4;\n  }\n}" , 
+    "trace": [
+      {
+        "ordered_globals": [], 
+        "stdout": "", 
+        "func_name": "yooo", 
+        "stack_to_render": [], 
+        "globals": {}, 
+        "heap": {}, 
+        "line": 1, 
+        "event": "step_line"
+      }, 
+      {
+        "ordered_globals": [
+          "x"
+        ], 
+        "stdout": "", 
+        "func_name": "<module>", 
+        "stack_to_render": [], 
+        "globals": {
+          "x": 5
+        }, 
+        "heap": {}, 
+        "line": 2, 
+        "event": "step_line"
+      }, 
+      {
+        "ordered_globals": [
+          "x", 
+          "y"
+        ], 
+        "stdout": "", 
+        "func_name": "<module>", 
+        "stack_to_render": [], 
+        "globals": {
+          "y": 10, 
+          "x": 5
+        }, 
+        "heap": {}, 
+        "line": 3, 
+        "event": "step_line"
+      }, 
+      {
+        "ordered_globals": [
+          "x", 
+          "y", 
+          "z"
+        ], 
+        "stdout": "", 
+        "func_name": "<module>", 
+        "stack_to_render": [], 
+        "globals": {
+          "y": 10, 
+          "x": 5, 
+          "z": 15
+        }, 
+        "heap": {}, 
+        "line": 3, 
+        "event": "return"
+      }
+    ]
+  }';
+  return $new_json;
+}
+//$fp = fpopen('results.txt', 'w');
+echo make_trace();
 // end of file.

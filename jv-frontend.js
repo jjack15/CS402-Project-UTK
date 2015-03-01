@@ -126,7 +126,7 @@ $(document).ready(function() {
   $("#embedLinkDiv").hide();
 
   pyInputCodeMirror = CodeMirror(document.getElementById('codeInputPane'), {
-    mode: 'text/x-java',
+    mode: 'text/x-c++src',
     lineNumbers: true,
       matchBrackets: true,
     tabSize: 3,
@@ -202,6 +202,7 @@ $(document).ready(function() {
 
 
   function executeCode(forceStartingInstr) {
+      alert("In executeCode!");
       var backend_script = java_backend_script;
 /*      if ($('#pythonVersionSelector').val() == '2') {
           backend_script = python2_backend_script;
@@ -219,11 +220,11 @@ $(document).ready(function() {
       $('#executeBtn').attr('disabled', true);
       $("#pyOutputPane").hide();
       $("#embedLinkDiv").hide();
-
+      alert("Still in executeCode!");
     var java_backend_options = {};
     java_backend_options.showStringsAsValues = !$('#showStringsAsObjects').is(':checked');
     java_backend_options.showAllFields = $('#showAllFields').is(':checked');
-
+    console.log(pyInputCodeMirror.getValue());
     var package = {
               user_script : pyInputCodeMirror.getValue(),
               options: java_backend_options,
@@ -235,7 +236,7 @@ $(document).ready(function() {
         $("#data-div").show();
         $("#data").html('[visualize]'+encodeURIComponent(JSON.stringify(package))+'[/visualize]');
     }
-
+    console.log(backend_script);
     $.ajax({url: backend_script,
             data: {data : JSON.stringify(package)},
            /*,
@@ -243,7 +244,9 @@ $(document).ready(function() {
              options_json: JSON.stringify(options)*/
             dataType: "json",
             timeout: pytutor_ajax_timeout_millis, //ms
-		error: ajaxErrorHandler,
+            /* Getting input from the front end */
+		        error: ajaxErrorHandler,
+            /* Calls this if the request is successful */
             success: function(dataFromBackend) {
               console.log(["Data from backend:", dataFromBackend]);
 
@@ -270,6 +273,7 @@ $(document).ready(function() {
                   }
 
                   alert(trace[0].exception_msg);
+                  //alert("Did we get here yet?!2");
                 }
                 else if (trace[trace.length - 1].exception_msg) {
                   alert(trace[trace.length - 1].exception_msg);
@@ -311,7 +315,6 @@ $(document).ready(function() {
                    highlightLines: true,
                    stdin: getUserStdin(),
                   };
-
                 myVisualizer = new ExecutionVisualizer('pyOutputPane',
                                                        dataFromBackend,
                                                        frontend_options);
@@ -328,7 +331,6 @@ $(document).ready(function() {
   function executeCodeFromScratch() {
     // reset these globals
     rawInputLst = [];
-
     executeCode();
   }
 

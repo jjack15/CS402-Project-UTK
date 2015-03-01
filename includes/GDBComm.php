@@ -1,5 +1,7 @@
 <?php
 require_once("LocalVar.php");
+require_once("Stack.php");
+require_once("StackFrame.php");
 /* This class is used for all communication to the GDB
    process running, including compilation of the target
    program, starting GDB, and quitting GDB */
@@ -14,6 +16,8 @@ class GDBComm
     private $stopped = "*stopped";
     private $current_line;
     private $local_vars;
+    private $stack;
+    private $json_array;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -24,6 +28,7 @@ class GDBComm
                 1 => array("pipe", "w"),
                 2 => array("pipe", "error-output.txt", "a")
                 );
+        $this->stack = new Stack();
     }
 
     /* Compile the source file into program that GDB can debug */
@@ -36,7 +41,8 @@ class GDBComm
         $result = exec("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
         //$process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
         //print "Result is $rv\n";
-        //print_r($output);
+        print_r($output);
+        print "RESULT: $result\n";
     }
 
     /* Start the GDB instance and clear all the stdout */
@@ -45,7 +51,6 @@ class GDBComm
         while ($f = fgets($this->pipes[1])) {
             //print "$f\n";
             if ($f == "~\"done.\\n\"\n") {
-                //print "Yoooo";
                 $f = fgets($this->pipes[1]);
                 break;
             }
@@ -59,15 +64,15 @@ class GDBComm
 
         /* Run GDB */
         $fout = fwrite($this->pipes[0], "-exec-run\r\n");
-
+        
+        /* Keep getting output until it has stopped */
         while ($f = fgets($this->pipes[1])) {
             //print $f;
             if (substr($f, 0, 8) == "*stopped") {
-                
+                $f = fgets($this->pipes[1]);
                 break;
             }
         }
-        $f = fgets($this->pipes[1]);
         //print $f;
 
         /* At this point, gdb has started, loaded the program, and is now executing, but stopped at a breakpoint in main */
@@ -89,17 +94,19 @@ class GDBComm
         $i = 0;
         foreach ($var_names as $var_name) {
             $new_local = new LocalVar($var_name);
-            array_push($this->local_vars, $new_local);
+            //array_push($this->local_vars, $new_local);
+            $new_local->set_value($var_values[$i]);
+            $this->local_vars[$var_name] = $new_local;
             print "i = $i\n";
             $i++;
         }
-        $i = 0;
+        /*$i = 0;
         foreach ($var_values as $var_value) {
             $new_local = $this->local_vars[$i];
             $new_local->set_value($var_value);
             $i++;
-        }
-        print "Matches: $vars[0]\n";
+        }*/
+        //print "Matches: $vars[0]\n";
         print_r($this->local_vars);
         $f = fgets($this->pipes[1]);
         print $f;
