@@ -29,20 +29,29 @@ class GDBComm
                 2 => array("pipe", "error-output.txt", "a")
                 );
         $this->stack = new Stack();
+        $this->json_array = array();
     }
 
     /* Compile the source file into program that GDB can debug */
-    function compile() {
+    function compile($input_code = null) {
         $descriptor_array = array(
                 0 => array("pipe", "r"),
                 1 => array("pipe", "w"),
-                2 => array("pipe", "error-output.txt", "a")
+                2 => array("pipe", "w")
                 );
-        $result = exec("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
-        //$process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
+        //$result = exec("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
+        $process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
         //print "Result is $rv\n";
-        print_r($output);
-        print "RESULT: $result\n";
+        while ($f = fgets($pipes[2])) {
+       //     print "G++: " . $f; 
+        }
+        $info = proc_get_status($process);
+        if ($info["running"] == FALSE) {
+            print "Exit code: \n";
+            if ($info["exitcode"]) {
+                print "There was an error!\n";
+            }
+        }
     }
 
     /* Start the GDB instance and clear all the stdout */
