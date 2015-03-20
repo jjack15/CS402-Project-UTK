@@ -2,10 +2,10 @@
 
 class Stack {
 	
-	private $stack;
+    private $stack;
 
-	function __construct() {
-		$this->stack = array();
+    function __construct() {
+        $this->stack = array();
     }
 
     /* Add a stack frame to the stack */
@@ -19,9 +19,9 @@ class Stack {
     }
 
     /* Return the stack frame on top of the stack */
-	function top() {
-		return current($this->stack);
-	}    
+    function top() {
+	return current($this->stack);
+    }    
 
 }
 

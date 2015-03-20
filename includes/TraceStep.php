@@ -54,5 +54,17 @@
             $out_array["stack_to_render"] = $this->stack;
             $out_array["stdout"] = stdout;
         }
+
+        function return_array() {
+            $array = array();
+            $array["event"] = $this->event;
+            $array["func_name"] = $this->func_name;
+            $array["globals"] = $this->globals;
+            $array["heap"] = $this->heap;
+            $array["line"] = $this->line;
+            $array["ordered_globals"] = $this->ordered_globals;
+            $array["stdout"] = $this->stdout;
+            return $array;
+        }
     }
 ?>
