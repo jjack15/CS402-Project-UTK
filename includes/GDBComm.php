@@ -18,10 +18,12 @@ class GDBComm
     private $current_line;
     private $local_vars;
     private $stack;
-    private $json_array;
+    private $eson_array;
     private $trace_array;
     private $ordered_locals;
     private $debug;
+    private $frame_count;
+    private $output_folder = "output";
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -37,6 +39,7 @@ class GDBComm
         $this->ordered_locals = array();
         $this->trace_array = array();
         $this->debug = false;
+        $this->frame_count = 0;
     }
 
     function debug() {
@@ -46,14 +49,15 @@ class GDBComm
     /* Compile the source file into program that GDB can debug */
     function compile($input_code = null) {
         if ($input_code != null) {
-            $this->json_array["code"] = $input_code;
+            $this->json_array["code"] = json_encode($input_code);
             if ($this->debug) print "INPUT DOESN'T EQUAL NULL";
             $current_time = floatval(time());
             if ($this->debug) print "current_time = ".$current_time."\n";
-            //mkdir(strval(current_time), 0700); 
-            mkdir("hello");
+            //mkdir(strval(current_time), 0700);
+            if (!file_exists($this->output_folder)) mkdir(strval($this->output_folder));
+            mkdir($this->output_folder."/".strval($current_time));
             //$this->source_file = strval($current_time)."/main.cpp";
-            $this->source_file = "hello/main.cpp";
+            $this->source_file = $this->output_folder."/".strval($current_time)."/main.cpp";
             if ($this->debug) echo "SOURCE FILE: ".$this->source_file."\n";
             $main_file = fopen($this->source_file, "w");
             fwrite($main_file, $input_code);
@@ -234,14 +238,15 @@ class GDBComm
     }
     
     function finish() {
-        print "\nIn finish\n";
+        if ($this->debug) print "\nIn finish\n";
         $this->json_array["trace"] = $this->trace_array;
-        print_r($this->json_array["trace"]);
+        //print_r($this->json_array);
     }
     
     function return_json() {
         //return json_encode($this->json_array);
-        print_r($this->json_array);
+        //print_r($this->json_array);
+        return json_encode($this->json_array);
     }
 
     function close() {
