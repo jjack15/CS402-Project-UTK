@@ -10,9 +10,10 @@
 
         function __construct() {
             $this->stdout = "";
-            $this->global = array();
+            $this->globals = array();
             $this->heap = array();
             $this->ordered_globals = array();
+            $this->stack = array();
         }
 
         function set_stack($in_stack) {
@@ -43,6 +44,13 @@
             $this->ordered_globals = $in_ordered_globals;
         }
         
+        function get_func_name() {
+            return $this->func_name;
+        }
+
+        function get_line() {
+            return $this->line;
+        }
         function get_as_array() {
             $out_array = array();
             $out_array["event"] = $this->event;
@@ -63,6 +71,7 @@
             $array["heap"] = $this->heap;
             $array["line"] = $this->line;
             $array["ordered_globals"] = $this->ordered_globals;
+            $array["stack_to_render"] = $this->stack;
             $array["stdout"] = $this->stdout;
             return $array;
         }

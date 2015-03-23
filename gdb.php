@@ -1,24 +1,30 @@
 <?php
 	require_once("includes/GDBComm.php");
-        $data = $_REQUEST['data'];
-        $data = json_decode($data, true);
-        $usercode = $data['user_script'];
-	$start_time = microtime(true);
+        header("Content-type: text/plain; charset=utf-8"); 
+        if (isset($_REQUEST)) {
+            $data = $_REQUEST['data'];
+            $data = json_decode($data, true);
+            $usercode = $data['user_script'];
+	}
+        $start_time = microtime(true);
 	$gdbcomm = new GDBComm("test.cpp");
 //	$gdbcomm->debug();
         if (isset($data)) {
             $gdbcomm->compile($usercode);
         }
         else {
-            $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\n}");
+            $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
         }
         /* Start GDB with the program running in debug mode */
 	$gdbcomm->start();
 	$gdbcomm->get_locals();
-	$gdbcomm->set_watchpoint("x");
 //	printf("Take a step\n");
+        $gdbcomm->print_locals();
         $gdbcomm->take_step();
-  //      printf("Finished taking step\n");
+        $gdbcomm->print_locals();
+        $gdbcomm->take_step();
+        $gdbcomm->print_locals();    
+  //printf("Finished taking step\n");
 	//$gdbcomm->take_step();
 	$gdbcomm->finish();
 //        $gdbcomm->print_array();

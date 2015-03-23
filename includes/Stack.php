@@ -20,9 +20,22 @@ class Stack {
 
     /* Return the stack frame on top of the stack */
     function top() {
-	return current($this->stack);
+        //$top = current($this->stack);
+        return $this->stack[0];
+        //return current($this->stack);
     }    
 
+    function set_new_top($new_top) {
+        $this->stack[0] = $new_top;
+    }
+
+    function return_array() {
+        $array = array();
+        foreach ($this->stack as $stack_frame) {
+            array_push($array, $stack_frame->return_array());
+        }
+        return $array;
+    }
 }
 
 ?>
