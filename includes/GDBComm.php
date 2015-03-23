@@ -55,10 +55,8 @@ class GDBComm
             if ($this->debug) print "INPUT DOESN'T EQUAL NULL";
             $current_time = floatval(time());
             if ($this->debug) print "current_time = ".$current_time."\n";
-            //mkdir(strval(current_time), 0700);
             if (!file_exists($this->output_folder)) mkdir(strval($this->output_folder));
             mkdir($this->output_folder."/".strval($current_time));
-            //$this->source_file = strval($current_time)."/main.cpp";
             $this->source_file = $this->output_folder."/".strval($current_time)."/main.cpp";
             $this->exec_file = substr($this->source_file, 0, strlen($this->source_file)-4);
             if ($this->debug) echo "SOURCE FILE: ".$this->source_file."\n";
@@ -71,11 +69,8 @@ class GDBComm
                 1 => array("pipe", "w"),
                 2 => array("pipe", "w")
                 );
-        //$result = exec("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $output, $rv);
         $process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
-        //print "Result is $rv\n";
         while ($f = fgets($pipes[2])) {
-       //     print "G++: " . $f; 
         }
         $info = proc_get_status($process);
         if ($info["running"] == FALSE) {
@@ -85,8 +80,6 @@ class GDBComm
             }
             return 0;
         }
-        //$this->trace_list = array();
-        //$this->json_array["trace"] = $this->trace_list;  
         return 1;
     }
 
@@ -101,7 +94,6 @@ class GDBComm
             fwrite($error, "It's running");
         }
         while ($f = fgets($this->pipes[1])) {
-            //print "$f\n";
             fwrite($error, "STUFF");
             if ($f == "~\"done.\\n\"\n") {
                 $f = fgets($this->pipes[1]);
@@ -210,64 +202,37 @@ class GDBComm
     }
 
     function set_watchpoint($variable) {
-        //print "\n In set watchpoint \n";
         $fout = fwrite($this->pipes[0], "-break-watch $variable\r\n");
-        //print "After writing $fout\n";
         $f1 = fgets($this->pipes[1]);
-        //print "After the first fgets()\n";
         $f2 = fgets($this->pipes[1]);
         if ((substr($f1, 0, 5) == "^done") && (substr($f2, 0, 5) == "(gdb)")) {
-            //print "\nWe did it!\n";
         }
     }
 
     /* Take a *step* through the code. After calling this function, you must read the output and see if any variables were changed or if the frame has changed */
     function take_step() {
         $trace_step = new TraceStep();
-        //print "\nIn take step\n";
         $fout = fwrite($this->pipes[0], "-exec-step\r\n");
-        //print "fout: $fout\n";
-        //set_watchpoint("x");
         $f = null;
         while($f = fgets($this->pipes[1])) {
-           // print "\n$f";
             /* Detect when the execution of step has stopped */
             if (substr($f, 0, 8) == "*stopped") {
                 $reason_return = preg_match('/reason="([A-Za-z0-9\\-._]*)"/', $f, $matches);
-                //print "REASON: \n";
-               // print_r($matches);
                 if ($matches[1] == "watchpoint-trigger") {
-                    //print "YO THE WATCHPOINT WAS TRIGGERED!\n";
-                    //echo "$f\n";
                     preg_match('/line="([0-9]*)"/', $f, $line_match);
                     $trace_step->set_line($line_match[1]);
-
                     preg_match('/wpt={number="[0-9]*",exp="([A-Za-z0-9_]*)"}/', $f, $watchpoint_match);
-             //       print_r($watchpoint_match);
                     preg_match('/value={old="[0-9A-Za-z]*",new="([0-9A-Za-z]*)"/', $f, $new_value);
-                    
-               //     print_r($new_value);
                     $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
-                 //   echo "\n\nNEW VALUE: ".$this->local_vars[$watchpoint_match[1]]->get_value()."\n\n";
                     break;
                 }
                 $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
-               // echo "\nAFTER RETURN!\n";
-               // echo "$f\n";
-               // print_r($matches);
                 if (isset($matches[1])) {
-                 //   print "\nRETURN: $return $matches[1]\n";
-                    //print_r($matches);
-                 //   echo "\n\n$this->source_file\n\n";
                     if ($matches[1] == $this->source_file) {
-                        //if ($this->debug) echo "YO IT MATCHES\n";
-                    //    echo "YO IT MATCHES\n";
                         preg_match('/line="([0-9]*)"/', $f, $line_match);
-                        //print_r($line_match);
                         $trace_step->set_line($line_match[1]);
                         echo "TRACE STEP LINE: ".$trace_step->get_line()."\n";
-                   //     echo "We're breaking!\n";
                         break;	
                     }
                 }	
@@ -277,11 +242,8 @@ class GDBComm
             }
             //fgets($this->pipes[1]);
         }
-        //print "\n$f";
-       // echo "\nIs this gonna work?";
         fgets($this->pipes[1]);
         preg_match('/func="([A-Za-z0-9._\/]*)"/', $f, $matches);
-        //print_r($matches);
         $trace_step->set_func_name($matches[1]);
         $stack_frame = $this->stack->top();
         $stack_frame->set_func_name($matches[1]);
@@ -316,13 +278,10 @@ class GDBComm
     function return_encoded_locals() {
         $array = array();
         foreach ($this->local_vars as $local_var) {
-            //print "\nENCODED LOCALS\n";
             if ($local_var->is_initialized()) {
-              //  print "\nRUH ROH\n";
                 $array[$local_var->get_name()] = $local_var->get_value();
             }
         }
-        //print_r($array);
         return $array;
     }
 
@@ -339,11 +298,9 @@ class GDBComm
     function finish() {
         if ($this->debug) print "\nIn finish\n";
         $this->json_array["trace"] = $this->trace_array;
-        //print_r($this->json_array);
     }
     
     function return_json() {
-        //return json_encode($this->json_array);
         $final_file = fopen("final2.txt", "w");
         fwrite($final_file, json_encode($this->json_array));
         return json_encode($this->json_array);
@@ -352,7 +309,6 @@ class GDBComm
     function close() {
         fclose($this->pipes[1]);
         proc_close($this->process);
-//        unlink("test");
     }
 }
 ?>
