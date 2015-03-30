@@ -1,5 +1,14 @@
 /*
 
+
+========= C++ Visualizer ==========================
+
+This file utilized both the Java Visualizer and Python Tutor codes
+and designs listed below for development of the UTK C++ CS102
+Visualizer.
+
+===================================================
+
 This file, jv-frontend.js, is based on
 opt-frontend.js from the Online Python Tutor.
 Changes made by David Pritchard (daveagp@gmail.com);
