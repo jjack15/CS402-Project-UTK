@@ -6,15 +6,23 @@
             $data = json_decode($data, true);
             $usercode = $data['user_script'];
 	}
+
+        $compile_result;
+
         $start_time = microtime(true);
 	$gdbcomm = new GDBComm("test.cpp");
 //	$gdbcomm->debug();
         if (isset($data)) {
-            $gdbcomm->compile($usercode);
+            $compile_result = $gdbcomm->compile($usercode);
         }
         else {
-            $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
+            $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
         }
+
+        if (!$compile_result) {
+            return $gdbcomm->get_error();
+        }
+
         /* Start GDB with the program running in debug mode */
 	$gdbcomm->start();
 	$gdbcomm->get_locals();

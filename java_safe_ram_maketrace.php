@@ -262,16 +262,16 @@ function make_trace() {
   $fp = fopen('results.txt', 'w');
   fwrite($fp, $data['user_script']);
   $new_json = '{
-    "code": "#include <iostream>\n  public static void main(String[] args) {\n     int x = 4;\n  }\n}" , 
+    "code": "#include <iostream>\n\nint main(int argc, char **argv) {\n  int x = 4;\n  x = 4 + 4;\n}" , 
     "trace": [
       {
         "ordered_globals": [], 
         "stdout": "", 
         "func_name": "yooo", 
-        "stack_to_render": [], 
+        "stack_to_render": {}, 
         "globals": {}, 
         "heap": {}, 
-        "line": 1, 
+        "line": 4, 
         "event": "step_line"
       }, 
       {
@@ -285,7 +285,7 @@ function make_trace() {
           "x": 5
         }, 
         "heap": {}, 
-        "line": 2, 
+        "line": 5, 
         "event": "step_line"
       }, 
       {
@@ -301,7 +301,7 @@ function make_trace() {
           "x": 5
         }, 
         "heap": {}, 
-        "line": 3, 
+        "line": 6, 
         "event": "step_line"
       }, 
       {
@@ -319,13 +319,38 @@ function make_trace() {
           "z": 15
         }, 
         "heap": {}, 
-        "line": 3, 
+        "line": 7, 
         "event": "return"
       }
     ]
   }';
-  return $new_json;
+  $new_array = array();
+  $new_array["code"] = "#include <iostream>\n\nint main(int argc, char **argv) {\n  int x = 4;\n  x = 4 + 4;\n}";
+  //$new_array["stdin"] = "testing";
+  $trace_array = array();
+  $trace_element = array();
+  $trace_element["event"] = "call";
+  $trace_element["heap"] = array();
+  $trace_element["line"] = 4;
+  $trace_element["ordered_globals"] = array();
+  $trace_element["stack_to_render"] = array();
+  $trace_element["stack_to_render"][0] = array();
+  $trace_element["stack_to_render"][0]["encoded_locals"] = array();
+  $trace_element["stack_to_render"][0]["frame_id"] = 1;
+  $trace_element["stack_to_render"][0]["func_name"] = "main:4";
+  $trace_element["stack_to_render"][0]["is_highlighted"] = "true";
+  $trace_element["stack_to_render"][0]["is_parent"] = false;
+  $trace_element["stack_to_render"][0]["is_zombie"]  = false;
+  $trace_element["stack_to_render"][0]["ordered_varnames"] = array();
+  $trace_element["stack_to_render"][0]["parent_frame_id_list"] = array();
+  $trace_element["stack_to_render"][0]["unique_hash"] = 1;  
+  $trace_element["stdout"] = "test";
+  $trace_array[0] = $trace_element;
+  $new_array["trace"] = $trace_array;
+  $fp = fopen("results.txt", "w");
+  fwrite($fp, json_encode($new_array));
+  return json_encode($new_array);
+  //return $new_json;
 }
-//$fp = fpopen('results.txt', 'w');
 echo make_trace();
 // end of file.

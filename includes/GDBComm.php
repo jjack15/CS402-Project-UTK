@@ -25,6 +25,7 @@ class GDBComm
     private $frame_count;
     private $output_folder = "output";
     private $trace_count;
+    private $error_array;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -42,6 +43,7 @@ class GDBComm
         $this->debug = false;
         $this->frame_count = 0;
         $this->trace_count = 0;
+        $this->error_array = array();
     }
 
     function debug() {
@@ -68,17 +70,26 @@ class GDBComm
                 0 => array("pipe", "r"),
                 1 => array("pipe", "w"),
                 2 => array("pipe", "w")
-                );
+        );
         $process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
+        $stderr_array = array();
         while ($f = fgets($pipes[2])) {
+            array_push($stderr_array, $f);
+            $preg_source = preg_quote($this->source_file, '/');
+            preg_match("/($preg_source):[0-9]*:[0-9]: error*/", $f, $matches);
+            if (sizeof($matches) > 0) {
+                array_push($this->error_array, $f);
+            }
         }
         $info = proc_get_status($process);
         if ($info["running"] == FALSE) {
             if ($this->debug) print "Exit code: \n";
             if ($info["exitcode"]) {
+                $this->error_array = array();
+                //print $this->source_file;
                 if ($this->debug) print "There was an error!\n";
+                return 0;
             }
-            return 0;
         }
         return 1;
     }
@@ -97,6 +108,7 @@ class GDBComm
             fwrite($error, "STUFF");
             if ($f == "~\"done.\\n\"\n") {
                 $f = fgets($this->pipes[1]);
+                $f = fgetS($this->pipes[1]);
                 break;
             }
         }
@@ -131,8 +143,6 @@ class GDBComm
             }
         }
         fwrite($fp, "AFTER");
-        //$trace_step->set_line(7);
-        //$trace_step->set_func_name("hello");
         $this->local_vars = $this->get_locals();
         $ordered_locals = array(); 
         if ($this->debug) print "\nPRINTING LOCALS\n";
@@ -153,16 +163,12 @@ class GDBComm
         if ($this->debug) print_r($ordered_locals);
         if ($this->debug) print "CURRENT LINE: ".$this->current_line."\n";
         array_push($this->trace_array, $trace_step->return_array());
-        //print "\n\nTRACE ARRAY\n\n";
-        //print_r($trace_step->return_array());
-        //print_r($this->trace_array); 
-        //print $f;
 
         /* At this point, gdb has started, loaded the program, and is now executing, but stopped at a breakpoint in main */
         $this->trace_count++;
     }
 
-    /* Get local variables on the stack, and record them into the class */
+    /* Returns an array containing ALL (even unitialized values) local variables for the current frame */
     function get_locals() {
         $fp = fopen("yo.txt", "w");
         fwrite($fp, "YOOO");
@@ -232,7 +238,7 @@ class GDBComm
                     if ($matches[1] == $this->source_file) {
                         preg_match('/line="([0-9]*)"/', $f, $line_match);
                         $trace_step->set_line($line_match[1]);
-                        echo "TRACE STEP LINE: ".$trace_step->get_line()."\n";
+                        //echo "TRACE STEP LINE: ".$trace_step->get_line()."\n";
                         break;	
                     }
                 }	
@@ -246,7 +252,8 @@ class GDBComm
         preg_match('/func="([A-Za-z0-9._\/]*)"/', $f, $matches);
         $trace_step->set_func_name($matches[1]);
         $stack_frame = $this->stack->top();
-        $stack_frame->set_func_name($matches[1]);
+        $stack_frame->set_func_name($matches[1].":".$trace_step->get_line());
+        $stack_frame->set_frame_id($this->frame_count++);
         $test_array = $this->return_encoded_locals();
         $stack_frame->set_encoded_locals($test_array);
         $stack_frame->set_ordered_varnames($this->return_ordered_varnames());
@@ -267,8 +274,19 @@ class GDBComm
     
     function print_locals() {
         foreach ($this->local_vars as $local_var) {
-            //echo $local_var->get_name()." : ".$local_var->get_value()."\n";
+            echo $local_var->get_name()." : ".$local_var->get_value()."\n";
         }
+    }
+
+    function get_error() {
+        $trace_step = new TraceStep();
+        $trace_step->set_event("uncaught_exception");
+        $exception_msg;
+        foreach ($this->error_array as $error) {
+            $exception_msg = $exception_msg.$error;
+        }
+        print $exception_msg;
+        //$trace_step->set_exception_msg("
     }
 
     function print_array() {

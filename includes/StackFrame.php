@@ -23,6 +23,8 @@ class StackFrame {
             $this->all_locals = array();
             $this->is_highlighted = true;
             $this->ordered_varnames = array();
+            $this->is_parent = false;
+            $this->is_zombie = false;
         }
 
 	function get_name() {
@@ -42,7 +44,7 @@ class StackFrame {
         }
 
         function get_func_name() {
-            return $this->func_name;
+            return $this->name;
         }
 
         function get_is_highlighted() {
@@ -72,10 +74,11 @@ class StackFrame {
 
         function set_frame_id($in_frame_id) {
             $this->frame_id = $in_frame_id;
+            $this->unique_hash = strval($in_frame_id);
         }
 
         function set_func_name($in_func_name) {
-            $this->func_name = $in_func_name;
+            $this->name = $in_func_name;
         }
         
         function set_is_highlighted($in_is_highlighted) {
@@ -109,6 +112,7 @@ class StackFrame {
             $array["func_name"] = $this->name;
             $array["is_highlighted"] = $this->is_highlighted;
             $array["is_parent"] = $this->is_parent;
+            $array["is_zombie"] = $this->is_zombie;
             $array["ordered_varnames"] = $this->ordered_varnames;
             $array["parent_frame_id_list"] = $this->parent_frame_id_list;
             $array["unique_hash"] = $this->unique_hash;
