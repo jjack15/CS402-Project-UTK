@@ -19,9 +19,14 @@ class LocalVar {
     public function set_value($in_value) {
         $this->value = $in_value;
     }
-    
+
+    public function set_type($in_type) {
+        $this->type = $in_type;
+    }
+
     public function get_value() {
         //if ($this->in_type == "prim") return $this->value;
+        if ($this->type == "int") intval($this->value);
         return $this->value;
     }
     
