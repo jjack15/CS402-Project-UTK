@@ -27,8 +27,7 @@
 	$gdbcomm->start();
 	$gdbcomm->get_locals();
 //	printf("Take a step\n");
-        $gdbcomm->take_step();
-        $gdbcomm->take_step();
+        while ($gdbcomm->take_step());
   //printf("Finished taking step\n");
 	//$gdbcomm->take_step();
 	$gdbcomm->finish();

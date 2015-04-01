@@ -3,6 +3,7 @@ require_once("LocalVar.php");
 require_once("Stack.php");
 require_once("StackFrame.php");
 require_once("TraceStep.php");
+
 /* This class is used for all communication to the GDB
    process running, including compilation of the target
    program, starting GDB, and quitting GDB */
@@ -174,7 +175,7 @@ class GDBComm
         fwrite($fp, "YOOO");
         if ($this->debug) print "In get_locals()\n"; 
         $local_vars = array();
-        $fout = fwrite($this->pipes[0], "-stack-list-locals --skip-unavailable 1\r\n");
+        $fout = fwrite($this->pipes[0], "-stack-list-locals 1\r\n");
         //print "fout for locals: $fout\n";
         $f = fgets($this->pipes[1]);
         fwrite($fp, $f);
@@ -182,6 +183,7 @@ class GDBComm
         $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_]*)/', $f, $matches);
         //print "Any matches? $result\n";
         if ($this->debug) print_r($matches);
+        $fout = fgets($this->pipes[1]);
         $var_names = $matches[1];
         $var_values = $matches[2];
         $i = 0;
@@ -190,6 +192,18 @@ class GDBComm
             $new_local = new LocalVar($var_name);
             //array_push($this->local_vars, $new_local);
             $new_local->set_value($var_values[$i]);
+            fwrite($this->pipes[0], "whatis ".$var_name."\r\n");
+            while ($f = fgets($this->pipes[1])) {
+                    $pos = strpos($f, '~"type');
+                    if($pos === 0) {
+                        $matches = array();
+                        preg_match('/~"type = ([\\A-Za-z]*)/', $f, $matches);
+                        $new_local->set_type($matches[1]);
+                    }
+                if (strpos($f, '^done') === 0) {
+                    break;
+                }
+            }
             $local_vars[$var_name] = $new_local;
             if ($this->debug) print "i = $i\n";
             $i++;
@@ -217,6 +231,7 @@ class GDBComm
 
     /* Take a *step* through the code. After calling this function, you must read the output and see if any variables were changed or if the frame has changed */
     function take_step() {
+        $return_val = TRUE;
         $trace_step = new TraceStep();
         $fout = fwrite($this->pipes[0], "-exec-step\r\n");
         $f = null;
@@ -231,6 +246,13 @@ class GDBComm
                     preg_match('/value={old="[0-9A-Za-z]*",new="([0-9A-Za-z]*)"/', $f, $new_value);
                     $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
+                    break;
+                }
+                else if ($matches[1] == "end-stepping-range") {
+                    break;
+                }
+                else if ($matches[1] == "exited-normally") {
+                    $return_val = FALSE;
                     break;
                 }
                 $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
@@ -261,6 +283,7 @@ class GDBComm
         $trace_step->set_stack($this->stack->return_array());
         array_push($this->trace_array, $trace_step->return_array());
         $this->trace_count++;
+        return $return_val;
    }	
 
     function update_local($var_name, $var_value) {

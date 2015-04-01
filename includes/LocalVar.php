@@ -25,9 +25,9 @@ class LocalVar {
     }
 
     public function get_value() {
-        //if ($this->in_type == "prim") return $this->value;
-        if ($this->type == "int") intval($this->value);
-        return $this->value;
+        $returnval = $this->value;
+        if ($this->type == "int") $returnval = intval($this->value);
+        return $returnval;
     }
     
     public function is_initialized() {
