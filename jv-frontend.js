@@ -230,7 +230,6 @@ $(document).ready(function() {
       $('#executeBtn').attr('disabled', true);
       $("#pyOutputPane").hide();
       $("#embedLinkDiv").hide();
-      alert("Still in executeCode!");
     var java_backend_options = {};
     java_backend_options.showStringsAsValues = !$('#showStringsAsObjects').is(':checked');
     java_backend_options.showAllFields = $('#showAllFields').is(':checked');
