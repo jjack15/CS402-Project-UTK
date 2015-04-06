@@ -183,9 +183,8 @@ class GDBComm
         $f = fgets($this->pipes[1]);
         fwrite($fp, $f);
         if ($this->debug) print "\n$f\n";
-        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_]*)/', $f, $matches);
+        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_.]*)/', $f, $matches);
         //print "Any matches? $result\n";
-        if ($this->debug) print_r($matches);
         $fout = fgets($this->pipes[1]);
         $var_names = $matches[1];
         $var_values = $matches[2];
@@ -246,7 +245,7 @@ class GDBComm
                     preg_match('/line="([0-9]*)"/', $f, $line_match);
                     $trace_step->set_line($line_match[1]);
                     preg_match('/wpt={number="[0-9]*",exp="([A-Za-z0-9_]*)"}/', $f, $watchpoint_match);
-                    preg_match('/value={old="[0-9A-Za-z]*",new="([0-9A-Za-z]*)"/', $f, $new_value);
+                    preg_match('/value={old="[0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
                     $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
                     break;
