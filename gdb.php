@@ -17,7 +17,12 @@
             $compile_result = $gdbcomm->compile($usercode);
         }
         else {
-            $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
+            //$compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
+            /*while (!feof($fp)) {
+                echo "hit\n";
+                $file_text = strval(fgets($fp));
+            }*/
+            $compile_result = $gdbcomm->compile($file_text); 
         }
 
         if (!$compile_result) {
