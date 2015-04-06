@@ -72,9 +72,10 @@ class GDBComm
                 1 => array("pipe", "w"),
                 2 => array("pipe", "w")
         );
-        $process = proc_open("g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
+        $process = proc_open("./g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
         $stderr_array = array();
         while ($f = fgets($pipes[2])) {
+            echo "$f\n";
             array_push($stderr_array, $f);
             $preg_source = preg_quote($this->source_file, '/');
             preg_match("/($preg_source):[0-9]*:[0-9]: error*/", $f, $matches);
@@ -99,28 +100,30 @@ class GDBComm
     function start() {
         $error = fopen("error.txt", "w");
         fwrite($error, $this->exec_file);
-        $this->process = proc_open("./gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
+	$this->process = proc_open("./gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
         if (is_resource($this->process)) fwrite($error, "YOOO");
         $about_proc = proc_get_status($this->process);
         if ($about_proc["running"]) {
             fwrite($error, "It's running");
         }
-        while ($f = fgets($this->pipes[1])) {
+	while ($f = fgets($this->pipes[1])) {
             fwrite($error, "STUFF");
             if ($f == "~\"done.\\n\"\n") {
-                $f = fgets($this->pipes[1]);
-                $f = fgetS($this->pipes[1]);
-                break;
-            }
+            	while ($f = fgets($this->pipes[1])) {
+		    $f = str_replace(array("\r", "\n", " "), "", $f);
+		    if ($f === "(gdb)"){
+			break;
+		    }
+		}
+		break;
+	    }
         }
         fwrite($error, "\n$f\n");
-
         /* Set the breakpoint at main */
         $fout = fwrite($this->pipes[0], "-break-insert main\r\n");
         //print "fout = $fout\n";
         fgets($this->pipes[1]);
         fgets($this->pipes[1]);
-
         /* Run GDB */
         $fout = fwrite($this->pipes[0], "-exec-run\r\n");
         $trace_step = new TraceStep(); 
@@ -180,9 +183,8 @@ class GDBComm
         $f = fgets($this->pipes[1]);
         fwrite($fp, $f);
         if ($this->debug) print "\n$f\n";
-        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_]*)/', $f, $matches);
+        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_.]*)/', $f, $matches);
         //print "Any matches? $result\n";
-        if ($this->debug) print_r($matches);
         $fout = fgets($this->pipes[1]);
         $var_names = $matches[1];
         $var_values = $matches[2];
@@ -243,13 +245,17 @@ class GDBComm
                     preg_match('/line="([0-9]*)"/', $f, $line_match);
                     $trace_step->set_line($line_match[1]);
                     preg_match('/wpt={number="[0-9]*",exp="([A-Za-z0-9_]*)"}/', $f, $watchpoint_match);
-                    preg_match('/value={old="[0-9A-Za-z]*",new="([0-9A-Za-z]*)"/', $f, $new_value);
+                    preg_match('/value={old="[0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
                     $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
                     break;
                 }
                 else if ($matches[1] == "end-stepping-range") {
                     break;
+                }
+                else if ($matches[1] == "watchpoint-scope") {
+                    break;
+                    //return $return_val;
                 }
                 else if ($matches[1] == "exited-normally") {
                     $return_val = FALSE;
@@ -308,7 +314,7 @@ class GDBComm
         foreach ($this->error_array as $error) {
             $exception_msg = $exception_msg.$error;
         }
-        print $exception_msg;
+        print json_encode($exception_msg);
         //$trace_step->set_exception_msg("
     }
 

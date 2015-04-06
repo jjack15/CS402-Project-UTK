@@ -27,6 +27,9 @@ class LocalVar {
     public function get_value() {
         $returnval = $this->value;
         if ($this->type == "int") $returnval = intval($this->value);
+        elseif ($this->type == "double") $returnval = floatval($this->value);
+        elseif ($this->type == "float") $returnval = floatval($this->value);
+        elseif ($this->type == "bool") $returnval = boolval($this->value);
         return $returnval;
     }
     
