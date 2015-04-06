@@ -1,7 +1,7 @@
 <?php
 	require_once("includes/GDBComm.php");
         header("Content-type: text/plain; charset=utf-8"); 
-        if (isset($_REQUEST)) {
+        if ($_REQUEST != null) {
             $data = $_REQUEST['data'];
             $data = json_decode($data, true);
             $usercode = $data['user_script'];
