@@ -29,6 +29,10 @@ class Stack {
         $this->stack[0] = $new_top;
     }
 
+    function size() {
+        return sizeof($this->stack);
+    }
+
     function return_array() {
         $array = array();
         foreach ($this->stack as $stack_frame) {

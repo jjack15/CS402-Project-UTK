@@ -1,5 +1,5 @@
 <?php
-	error_reporting(E_ERROR);
+//	error_reporting(E_ERROR);
         require_once("includes/GDBComm.php");
         header("Content-type: text/plain; charset=utf-8"); 
         if ($_REQUEST != null) {
@@ -17,16 +17,8 @@
             $compile_result = $gdbcomm->compile($usercode);
         }
         else {
-<<<<<<< HEAD
-            $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint test() {\nint x;\nx=8;\nreturn 1;\n}\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\ntest();\n}");
-=======
-            //$compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
-            /*while (!feof($fp)) {
-                echo "hit\n";
-                $file_text = strval(fgets($fp));
-            }*/
+            $file_text = file_get_contents("test.cpp");
             $compile_result = $gdbcomm->compile($file_text); 
->>>>>>> 9d3c69677ef51bf7cb70d8525818166c82ebf26f
         }
 
         if (!$compile_result) {
