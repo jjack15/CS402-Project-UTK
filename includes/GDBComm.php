@@ -27,6 +27,7 @@ class GDBComm
     private $output_folder = "output";
     private $trace_count;
     private $error_array;
+    private $current_depth;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -167,6 +168,7 @@ class GDBComm
 
         /* At this point, gdb has started, loaded the program, and is now executing, but stopped at a breakpoint in main */
         $this->trace_count++;
+        $this->current_depth = 1;
     }
 
     /* Returns an array containing ALL (even unitialized values) local variables for the current frame */
@@ -247,8 +249,28 @@ class GDBComm
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
                     break;
                 }
-                else if ($matches[1] == "end-stepping-range") {
-                    break;
+                else if ($matches[1] == "end-stepping-range") {    
+                    $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
+                    if (isset($matches[1])) {
+                        if ($matches[1] == $this->source_file) {
+                            preg_match('/line="([0-9]*)"/', $f, $line_match);
+                            $trace_step->set_line($line_match[1]);
+                            //echo "TRACE STEP LINE: ".$trace_step->get_line()."\n";
+                            break;  
+                        }
+                    }
+                    else {
+                        while ($f = fgets($this->pipes[1])) {
+                            //$replace_string = str_replace(' ', '', $f);
+                            //$replace_string = str_replace("\r", "\n", '', $f);
+                            $replace_string = str_replace(array("\r", "\n"), '', $f);
+                            $replace_string = str_replace(' ', '', $replace_string);
+                            if ($replace_string == "(gdb)") {
+                                return 1;
+                            }
+                        }
+                        return 1;
+                    }
                 }
                 else if ($matches[1] == "exited-normally") {
                     $return_val = FALSE;
@@ -270,17 +292,32 @@ class GDBComm
             //fgets($this->pipes[1]);
         }
         fgets($this->pipes[1]);
-        preg_match('/func="([A-Za-z0-9._\/]*)"/', $f, $matches);
-        $trace_step->set_func_name($matches[1]);
-        $stack_frame = $this->stack->top();
-        $stack_frame->set_func_name($matches[1].":".$trace_step->get_line());
-        $stack_frame->set_frame_id($this->frame_count++);
-        $test_array = $this->return_encoded_locals();
-        $stack_frame->set_encoded_locals($test_array);
-        $stack_frame->set_ordered_varnames($this->return_ordered_varnames());
-        $this->stack->set_new_top($stack_frame);
-        $trace_step->set_stack($this->stack->return_array());
-        array_push($this->trace_array, $trace_step->return_array());
+        fwrite($this->pipes[0], "-stack-info-depth\r\n");
+        $depth_line= fgets($this->pipes[1]);
+        preg_match ("/\^done,depth=\"([0-9]*)\"/", $depth_line, $depth_matches);
+        //print_r($depth_matches);
+        $stack_depth;
+        if (isset($depth_matches[1])) {
+            $stack_depth = intval($depth_matches[1]);
+            //print_r($stack_depth);
+            if ($stack_depth > $this->current_depth) {
+               //print "NEW FRAME\n";
+            }
+            else {
+                preg_match('/func="([A-Za-z0-9._\/]*)"/', $f, $matches);
+                $trace_step->set_func_name($matches[1]);
+                $stack_frame = $this->stack->top();
+                $stack_frame->set_func_name($matches[1].":".$trace_step->get_line());
+                $stack_frame->set_frame_id($this->frame_count++);
+                $test_array = $this->return_encoded_locals();
+                $stack_frame->set_encoded_locals($test_array);
+                $stack_frame->set_ordered_varnames($this->return_ordered_varnames());
+                $this->stack->set_new_top($stack_frame);
+                $trace_step->set_stack($this->stack->return_array());
+                array_push($this->trace_array, $trace_step->return_array());
+            }
+        }
+        //echo "STACK INFO DEPTH: $f";
         $this->trace_count++;
         return $return_val;
    }	
