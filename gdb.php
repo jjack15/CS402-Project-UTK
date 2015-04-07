@@ -16,7 +16,7 @@
             $compile_result = $gdbcomm->compile($usercode);
         }
         else {
-            $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
+            $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint test() {\nint x;\nx=8;\nreturn 1;\n}\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\ntest();\n}");
         }
 
         if (!$compile_result) {
