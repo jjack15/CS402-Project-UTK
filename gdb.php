@@ -1,7 +1,8 @@
 <?php
-	require_once("includes/GDBComm.php");
+	error_reporting(E_ERROR);
+        require_once("includes/GDBComm.php");
         header("Content-type: text/plain; charset=utf-8"); 
-        if (isset($_REQUEST)) {
+        if ($_REQUEST != null) {
             $data = $_REQUEST['data'];
             $data = json_decode($data, true);
             $usercode = $data['user_script'];
@@ -16,19 +17,30 @@
             $compile_result = $gdbcomm->compile($usercode);
         }
         else {
+<<<<<<< HEAD
             $compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint test() {\nint x;\nx=8;\nreturn 1;\n}\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\ntest();\n}");
+=======
+            //$compile_result = $gdbcomm->compile("#include<iostream>\n\nusing namespace std;\n\nint main(int argc, char **argv) {\nint x;\nx=4;\nx = 8;\n}");
+            /*while (!feof($fp)) {
+                echo "hit\n";
+                $file_text = strval(fgets($fp));
+            }*/
+            $compile_result = $gdbcomm->compile($file_text); 
+>>>>>>> 9d3c69677ef51bf7cb70d8525818166c82ebf26f
         }
 
         if (!$compile_result) {
+            //return 0;
             return $gdbcomm->get_error();
         }
 
         /* Start GDB with the program running in debug mode */
 	$gdbcomm->start();
-	$gdbcomm->get_locals();
+        $gdbcomm->get_locals();
         while ($gdbcomm->take_step());
-	$gdbcomm->finish();
+        $gdbcomm->finish();
         echo $gdbcomm->return_json();
+        return 0;
         $gdbcomm->close();
 	$end_time = microtime(true);
 	$total_time = $end_time - $start_time;
