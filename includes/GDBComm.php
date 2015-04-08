@@ -269,7 +269,11 @@ class GDBComm
             //fgets($this->pipes[1]);
         }
 
-        while (fgets($this->pipes[1]) != "(gdb) \n");
+        while ($new_line = fgets($this->pipes[1])) {
+            $new_line = str_replace(array("\n", "\r"), '', $new_line);
+            $new_line = str_replace(" ", '', $new_line);
+            if ($new_line != "(gdb) \n") break;
+        }
         fwrite($this->pipes[0], "-stack-info-depth\r\n");
         $depth_line = fgets($this->pipes[1]);
         preg_match ("/\^done,depth=\"([0-9]*)\"/", $depth_line, $depth_matches);
