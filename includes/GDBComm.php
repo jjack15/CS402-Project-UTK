@@ -218,7 +218,6 @@ class GDBComm
         $gdb_flag = false;
         while($f = fgets($this->pipes[1])) {
             /* Detect when the execution of step has stopped */
-            //echo $f;
             $f = str_replace(array("\r", "\n"), '', $f);
             $f = str_replace(" ", '', $f);
             if (substr($f, 0, 8) == "*stopped") {
