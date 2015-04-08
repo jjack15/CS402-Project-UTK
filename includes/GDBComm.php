@@ -28,6 +28,7 @@ class GDBComm
     private $trace_count;
     private $error_array;
     private $current_depth;
+    private $stdout;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -118,7 +119,8 @@ class GDBComm
         fgets($this->pipes[1]);
         fgets($this->pipes[1]);
         /* Run GDB */
-        $fout = fwrite($this->pipes[0], "-exec-run\r\n");
+        //$fout = fwrite($this->pipes[0], "-exec-run\r\n");
+        $fout = fwrite($this->pipes[0], "interpreter-exec console \"r > testing.txt\"\r\n");
         $trace_step = new TraceStep(); 
         $trace_step->set_event("call");
 
@@ -144,6 +146,7 @@ class GDBComm
         // Set watchpoints
         foreach ($this->local_vars as $local_var) {
             $this->set_watchpoint($local_var->get_name());
+            //echo "Setting watchpoint for ".$local_var->get_name()."\n";
         }
         
         $stack_frame = new StackFrame($trace_step->get_func_name().":".$trace_step->get_line());
@@ -212,8 +215,12 @@ class GDBComm
         $trace_step = new TraceStep();
         $fout = fwrite($this->pipes[0], "-exec-step\r\n");
         $f = null;
+        $gdb_flag = false;
         while($f = fgets($this->pipes[1])) {
             /* Detect when the execution of step has stopped */
+            //echo $f;
+            $f = str_replace(array("\r", "\n"), '', $f);
+            $f = str_replace(" ", '', $f);
             if (substr($f, 0, 8) == "*stopped") {
                 $reason_return = preg_match('/reason="([A-Za-z0-9\\-._]*)"/', $f, $matches);
                 if ($matches[1] == "watchpoint-trigger") {
@@ -264,7 +271,12 @@ class GDBComm
                     }
                 }	
             }
-            else {
+            else if($f=="(gdb)") {
+                $gdb_flag = true;
+            } else {
+                if ($gdb_flag) {
+                    //echo "HIYAH!!!!\n";
+                }
             }
             //fgets($this->pipes[1]);
         }
@@ -320,6 +332,8 @@ class GDBComm
                 $stack_frame->set_ordered_varnames($this->return_ordered_varnames());
                 $this->stack->set_new_top($stack_frame);
                 $trace_step->set_stack($this->stack->return_array());
+                $this->stdout = file_get_contents("testing.txt");
+                $trace_step->set_stdout($this->stdout);
                 array_push($this->trace_array, $trace_step->return_array());
             }
         }

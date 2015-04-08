@@ -7,6 +7,7 @@
         private $heap;
         private $line;
         private $ordered_globals;
+        private $stdout;
 
         function __construct() {
             $this->stdout = "";
@@ -30,6 +31,10 @@
 
         function set_globals($in_globals) {
             $this->globals = $in_globals;
+        }
+
+        function set_stdout($in_stdout) {
+            $this->stdout = $in_stdout;
         }
 
         function set_heap($in_heap) {
