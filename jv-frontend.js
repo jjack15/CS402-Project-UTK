@@ -212,7 +212,6 @@ $(document).ready(function() {
 
 
   function executeCode(forceStartingInstr) {
-      alert("In executeCode!");
       var backend_script = java_backend_script;
 /*      if ($('#pythonVersionSelector').val() == '2') {
           backend_script = python2_backend_script;
@@ -288,7 +287,7 @@ $(document).ready(function() {
                   alert(trace[trace.length - 1].exception_msg);
                 }
                 else {
-                  alert("Whoa, unknown error! Reload to try again, or report a bug to daveagp@gmail.com\n\n(Click the 'Generate URL' button to include a unique URL in your email bug report.)");
+                  alert("Whoa, unknown error! Reload to try again, or report a bug to daveagp@gmail.com\n\n(Click the 'Generate URL' button to include a unique URL in your email bug report.)" + trace.length);
                 }
 
                 $('#executeBtn').html("Visualize execution");
