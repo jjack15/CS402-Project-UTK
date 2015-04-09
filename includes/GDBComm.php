@@ -48,6 +48,10 @@ class GDBComm
         $this->trace_count = 0;
         $this->error_array = array();
     }
+    
+    function set_source($in_source) {
+        $this->source_file = $in_source;
+    }
 
     function debug() {
         $this->debug = true;
@@ -74,9 +78,10 @@ class GDBComm
         $process = proc_open("./g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
         $stderr_array = array();
         while ($f = fgets($pipes[2])) {
+            //echo "We're in here";
             array_push($stderr_array, $f);
             $preg_source = preg_quote($this->source_file, '/');
-            preg_match("/($preg_source):[0-9]*:[0-9]: error*/", $f, $matches);
+            preg_match("/($preg_source):[0-9]*:[0-9]*: error/", $f, $matches);
             if (sizeof($matches) > 0) {
                 array_push($this->error_array, $f);
             }
@@ -84,7 +89,7 @@ class GDBComm
         $info = proc_get_status($process);
         if ($info["running"] == FALSE) {
             if ($info["exitcode"]) {
-                $this->error_array = array();
+                //$this->error_array = array();
                 return 0;
             }
         }
@@ -359,10 +364,21 @@ class GDBComm
         $trace_step = new TraceStep();
         $trace_step->set_event("uncaught_exception");
         $exception_msg;
+        $i = 0;
         foreach ($this->error_array as $error) {
+            if ($i == 0) {
+                preg_match("/^[A-Za-z0-9\/\.]*:([0-9]*):([0-9]*): error/", $error, $matches); 
+                $trace_step->set_line($matches[1]);
+                $trace_step->set_offset($matches[2]);
+            }
             $exception_msg = $exception_msg.$error;
+            $i++;
         }
-        print json_encode($exception_msg);
+        $trace_step->set_exception_msg($exception_msg);
+        //$trace_step->set_exception_msg($
+        array_push($this->trace_array, $trace_step->return_array()); 
+        $this->finish();
+        echo $this->return_json();
         //$trace_step->set_exception_msg("
     }
 

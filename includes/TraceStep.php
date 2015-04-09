@@ -1,7 +1,10 @@
 <?php
     class TraceStep {
+        
         private $stack;
         private $event;
+        private $exception_msg;
+        private $offset;
         private $func_name;
         private $globals;
         private $heap;
@@ -23,6 +26,14 @@
 
         function set_event($in_event) {
             $this->event = $in_event;
+        }
+
+        function set_exception_msg($in_exception_msg) {
+            $this->exception_msg = $in_exception_msg;
+        }
+    
+        function set_offset($in_offset) {
+            $this->offset = $in_offset;
         }
 
         function set_func_name($in_func_name) {
@@ -59,6 +70,9 @@
         function get_as_array() {
             $out_array = array();
             $out_array["event"] = $this->event;
+            if ($this->event == "uncaught_exception") {
+                $out_array["exception_msg"] = $this->exception_msg;
+            }
             $out_array["func_name"] = $this->func_name;
             $out_array["func_name"] = $this->globals;
             $out_array["heap"] = $this->heap;
@@ -71,13 +85,19 @@
         function return_array() {
             $array = array();
             $array["event"] = $this->event;
-            $array["func_name"] = $this->func_name;
-            $array["globals"] = $this->globals;
-            $array["heap"] = $this->heap;
-            $array["line"] = $this->line;
-            $array["ordered_globals"] = $this->ordered_globals;
-            $array["stack_to_render"] = $this->stack;
-            $array["stdout"] = $this->stdout;
+            if ($this->event == "uncaught_exception") {
+                $array["exception_msg"] = $this->exception_msg;
+                $array["offset"] = $this->offset;
+                $array["line"] = $this->line;
+            } else {
+                $array["func_name"] = $this->func_name;
+                $array["globals"] = $this->globals;
+                $array["heap"] = $this->heap;
+                $array["line"] = $this->line;
+                $array["ordered_globals"] = $this->ordered_globals;
+                $array["stack_to_render"] = $this->stack;
+                $array["stdout"] = $this->stdout;
+            }
             return $array;
         }
     }

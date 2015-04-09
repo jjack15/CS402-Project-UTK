@@ -19,11 +19,14 @@
         else {
             $file_text = file_get_contents("test.cpp");
             $compile_result = $gdbcomm->compile($file_text); 
+//            $gdbcomm->set_source("test.cpp");
         }
 
         if (!$compile_result) {
             //return 0;
-            return $gdbcomm->get_error();
+//            echo "WE IN HERE\n";
+            echo $gdbcomm->get_error();
+            return 0;
         }
 
         /* Start GDB with the program running in debug mode */
