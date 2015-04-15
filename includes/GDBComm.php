@@ -111,7 +111,7 @@ class GDBComm
     }
 
     /* Start the GDB instance and clear all the stdout */
-    function start() {
+    function start($program_input) {
         $error = fopen("error.txt", "w");
         fwrite($error, $this->exec_file);
 	$this->process = proc_open("./gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
@@ -138,7 +138,25 @@ class GDBComm
         fgets($this->pipes[1]);
         /* Run GDB */
         //$fout = fwrite($this->pipes[0], "-exec-run\r\n");
-        $fout = fwrite($this->pipes[0], "interpreter-exec console \"r > testing.txt\"\r\n");
+
+        // Build run command string
+        $run_command_str = "interpreter-exec console \"r";
+        $stdout_filename = "testing.txt";
+        $run_command_str = $run_command_str." > ".$stdout_filename;
+
+        // If program input not empty, write input to file and update run command string
+        
+        if (!empty($program_input)) {
+            $stdin_filename = "input.txt";
+            $stdin_file = fopen($stdin_filename, "w");
+            fwrite($stdin_file, $program_input);
+            fclose($stdin_file);
+            $run_command_str = $run_command_str." < ".$stdin_filename;
+        } // end if
+
+        $run_command_str = $run_command_str."\"\r\n";
+
+        $fout = fwrite($this->pipes[0], $run_command_str);
         $trace_step = new TraceStep(); 
         $trace_step->set_event("call");
 
@@ -149,7 +167,7 @@ class GDBComm
                 $trace_step->set_line(intval($matches[1]));
                 preg_match('/func="([A-Za-z0-9_]*)"/', $f, $matches);
                 $trace_step->set_func_name($matches[1]);
-                $f = fgets($this->pipes[1]);
+                //$f = fgets($this->pipes[1]);
                 break;
             }
         }

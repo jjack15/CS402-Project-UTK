@@ -2,12 +2,14 @@
 //	error_reporting(E_ERROR);
         require_once("includes/GDBComm.php");
         header("Content-type: text/plain; charset=utf-8"); 
+
+        $stdin = "";
         if ($_REQUEST != null) {
             $data = $_REQUEST['data'];
             $data = json_decode($data, true);
             $usercode = $data['user_script'];
-	    $stdin = $data['stdin'];
-        }
+            $stdin = $data['stdin'];
+	}
 
         $compile_result;
 
@@ -31,7 +33,7 @@
         }
 
         /* Start GDB with the program running in debug mode */
-	$gdbcomm->start();
+	$gdbcomm->start($stdin);
         $gdbcomm->get_locals();
         while ($gdbcomm->take_step());
         $gdbcomm->finish();
