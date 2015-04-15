@@ -48,7 +48,19 @@ class GDBComm
         $this->trace_count = 0;
         $this->error_array = array();
     }
-    
+
+    /* Keep reading standard output until reached (gdb) line. (gdb) usually marks
+    the end of standard out. */
+    function stop_at_gdb() {
+        while ($f = fgets($this->pipes[1])) {
+            //echo $f;
+            $f = str_replace(array("\r", "\n", " "), '', $f);
+            if ($f === "(gdb)") {
+                return;
+            }
+        }
+    }
+
     function set_source($in_source) {
         $this->source_file = $in_source;
     }
@@ -78,12 +90,14 @@ class GDBComm
         $process = proc_open("./g++ -O0 -g " . $this->source_file . " -o " . $this->exec_file, $descriptor_array, $pipes);
         $stderr_array = array();
         while ($f = fgets($pipes[2])) {
-            //echo "We're in here";
             array_push($stderr_array, $f);
             $preg_source = preg_quote($this->source_file, '/');
             preg_match("/($preg_source):[0-9]*:[0-9]*: error/", $f, $matches);
             if (sizeof($matches) > 0) {
                 array_push($this->error_array, $f);
+            }
+            preg_match("/($preg_source):[0-9]*:[0-9]*: warning/", $f, $matches);
+            if (sizeof($matches) > 0) {
             }
         }
         $info = proc_get_status($process);
@@ -109,17 +123,16 @@ class GDBComm
 	while ($f = fgets($this->pipes[1])) {
             fwrite($error, "STUFF");
             if ($f == "~\"done.\\n\"\n") {
-            	while ($f = fgets($this->pipes[1])) {
-		    $f = str_replace(array("\r", "\n", " "), "", $f);
-		    if ($f === "(gdb)"){
-			break;
-		    }
-		}
+                $this->stop_at_gdb();
 		break;
 	    }
         }
-        fwrite($error, "\n$f\n");
         /* Set the breakpoint at main */
+        $fout = fwrite($this->pipes[0], "set can-use-hw-watchpoints 0\r\n");
+        fgets($this->pipes[1]);
+        fgets($this->pipes[1]);
+        fgets($this->pipes[1]);
+        fgets($this->pipes[1]);
         $fout = fwrite($this->pipes[0], "-break-insert main\r\n");
         fgets($this->pipes[1]);
         fgets($this->pipes[1]);
@@ -129,14 +142,10 @@ class GDBComm
         $trace_step = new TraceStep(); 
         $trace_step->set_event("call");
 
-        $fp = fopen("matches.txt", "w");
-        fwrite($fp, "YOOO");
         /* Keep getting output until it has stopped */
         while ($f = fgets($this->pipes[1])) {
-            fwrite($fp, "Yo");
             if (substr($f, 0, 8) == "*stopped") {
                 preg_match('/line="([0-9]*)"/', $f, $matches);   
-                fwrite($fp, "LINE");
                 $trace_step->set_line(intval($matches[1]));
                 preg_match('/func="([A-Za-z0-9_]*)"/', $f, $matches);
                 $trace_step->set_func_name($matches[1]);
@@ -144,14 +153,12 @@ class GDBComm
                 break;
             }
         }
-        fwrite($fp, "AFTER");
         $this->local_vars = $this->get_locals();
         $ordered_locals = array(); 
 
         // Set watchpoints
         foreach ($this->local_vars as $local_var) {
             $this->set_watchpoint($local_var->get_name());
-            //echo "Setting watchpoint for ".$local_var->get_name()."\n";
         }
         
         $stack_frame = new StackFrame($trace_step->get_func_name().":".$trace_step->get_line());
@@ -170,12 +177,9 @@ class GDBComm
 
     /* Returns an array containing ALL (even unitialized values) local variables for the current frame */
     function get_locals() {
-        $fp = fopen("yo.txt", "w");
-        fwrite($fp, "YOOO");
         $local_vars = array();
         $fout = fwrite($this->pipes[0], "-stack-list-locals 1\r\n");
         $f = fgets($this->pipes[1]);
-        fwrite($fp, $f);
         $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_.]*)/', $f, $matches);
         $fout = fgets($this->pipes[1]);
         $var_names = $matches[1];
@@ -191,7 +195,10 @@ class GDBComm
                     $pos = strpos($f, '~"type');
                     if($pos === 0) {
                         $matches = array();
-                        preg_match('/~"type = ([\\A-Za-z]*)/', $f, $matches);
+                        preg_match('/~"type = ([\\A-Za-z:_1-9]*)/', $f, $matches);
+                        if ($matches[1] == "std::__1::string") {
+                            $matches[1] = "string";
+                        }
                         $new_local->set_type($matches[1]);
                     }
                 if (strpos($f, '^done') === 0) {
@@ -220,9 +227,9 @@ class GDBComm
         $trace_step = new TraceStep();
         $fout = fwrite($this->pipes[0], "-exec-step\r\n");
         $f = null;
-        $gdb_flag = false;
         while($f = fgets($this->pipes[1])) {
             /* Detect when the execution of step has stopped */
+            //echo $f;
             $f = str_replace(array("\r", "\n"), '', $f);
             $f = str_replace(" ", '', $f);
             if (substr($f, 0, 8) == "*stopped") {
@@ -258,14 +265,19 @@ class GDBComm
                         return 1;
                     }
                 }
-                else if ($matches[1] == "watchpoint-scope") {
+                /*else if ($matches[1] == "watchpoint-scope") {
                     break;
                     //return $return_val;
-                }
+                }*/
                 else if ($matches[1] == "exited-normally") {
                     $return_val = FALSE;
                     break;
                 }
+                else if ($matches[1] == "watchpoint-scope") {
+                    $this->stop_at_gdb();
+                    return 1;
+                }
+
                 $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
                 if (isset($matches[1])) {
                     if ($matches[1] == $this->source_file) {
@@ -273,34 +285,28 @@ class GDBComm
                         $trace_step->set_line($line_match[1]);
                         break;	
                     }
-                }	
-            }
-            else if($f=="(gdb)") {
-                $gdb_flag = true;
+                }	                
             } else {
-                if ($gdb_flag) {
-                    //echo "HIYAH!!!!\n";
-                }
             }
-            //fgets($this->pipes[1]);
         }
 
         while ($new_line = fgets($this->pipes[1])) {
             $new_line = str_replace(array("\n", "\r"), '', $new_line);
             $new_line = str_replace(" ", '', $new_line);
-            if ($new_line != "(gdb) \n") break;
+            if ($new_line == "(gdb)") break;
         }
         fwrite($this->pipes[0], "-stack-info-depth\r\n");
         $depth_line = fgets($this->pipes[1]);
         preg_match ("/\^done,depth=\"([0-9]*)\"/", $depth_line, $depth_matches);
-        $stack_depth;
         preg_match('/func="([A-Za-z0-9._\/]*)"/', $f, $matches);
+        $stack_depth;
         if (isset($depth_matches[1])) {
             $stack_depth = intval($depth_matches[1]);
             if ($stack_depth > $this->current_depth) {
                 $this->stack->top()->set_is_highlighted(false);
                 $stack_frame = new StackFrame($matches[1].":".$trace_step->get_line());
                 $stack_frame->set_frame_id($this->frame_count++);
+                $this->stack->top()->set_local_vars($this->local_vars);
                 fgets($this->pipes[1]);
                 $this->local_vars = $this->get_locals(); 
                 $trace_step->set_func_name($matches[1]);
@@ -321,7 +327,9 @@ class GDBComm
                     $this->stack->top()->set_is_highlighted(true);
                     $this->stack->top()->set_frame_id($this->frame_count++);
                     $this->stack->top()->set_func_name($matches[1].":".$trace_step->get_line());
-                    $this->stack_depth = $stack_depth - 1; 
+                    $this->current_depth = $stack_depth; 
+                    fgets($this->pipes[1]);
+                    $this->local_vars = $this->stack->top()->get_local_vars(); 
                     $trace_step->set_stack($this->stack->return_array());
                     array_push($this->trace_array, $trace_step->return_array());
                     $this->trace_count++;

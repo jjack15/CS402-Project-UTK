@@ -59,9 +59,8 @@ class StackFrame {
             return $this->all_locals;
         }
 
-	function set_locals_vars($in_locals) {
+	function set_local_vars($in_locals) {
 	    $this->local_vars = $in_locals;
-
 	}
         
         function set_ordered_varnames($in_ordered_varnames) {

@@ -6,7 +6,8 @@
             $data = $_REQUEST['data'];
             $data = json_decode($data, true);
             $usercode = $data['user_script'];
-	}
+	    $stdin = $data['stdin'];
+        }
 
         $compile_result;
 
