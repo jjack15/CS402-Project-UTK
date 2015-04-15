@@ -377,10 +377,11 @@ $(document).ready(function() {
       $("#examplesHolder").append(" | ");
       filename = topics[i][1][j];
       var newItem = $("<a href='#'>" + filename + "</a>");
-      newItem.click(exampleCallback(examplesDir + filename + ".java"));
+      newItem.click(exampleCallback(examplesDir + filename + ".cpp"));
       $("#examplesHolder").append(newItem);
       done[filename] = true;
     }
+    console.log(done);
   }
 
   var populate_misc = function(index_page) {
@@ -388,7 +389,7 @@ $(document).ready(function() {
       var first = true;
       $(index_page).find("td > a").each(function() {
 	var filename = $(this).attr("href");
-	if (filename.endsWith(".java")) { // an example
+	if (filename.endsWith(".cpp")) { // an example
           filename = filename.substring(0, filename.length-5);
           if (done[filename]) return;
 	  var newItem = $("<a href='#'>" + filename + "</a>");
