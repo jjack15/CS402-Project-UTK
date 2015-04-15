@@ -129,15 +129,10 @@ class GDBComm
         }
         /* Set the breakpoint at main */
         $fout = fwrite($this->pipes[0], "set can-use-hw-watchpoints 0\r\n");
-        fgets($this->pipes[1]);
-        fgets($this->pipes[1]);
-        fgets($this->pipes[1]);
-        fgets($this->pipes[1]);
+        $this->stop_at_gdb();
         $fout = fwrite($this->pipes[0], "-break-insert main\r\n");
-        fgets($this->pipes[1]);
-        fgets($this->pipes[1]);
+        $this->stop_at_gdb();
         /* Run GDB */
-        //$fout = fwrite($this->pipes[0], "-exec-run\r\n");
 
         // Build run command string
         $run_command_str = "interpreter-exec console \"r";
