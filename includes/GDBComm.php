@@ -133,9 +133,6 @@ class GDBComm
 
         // If program input not empty, write input to file and update run command string
         
-        /* DEBUG */
-        $program_input = "15";
-
         if (!empty($program_input)) {
             $stdin_filename = "input.txt";
             $stdin_file = fopen($stdin_filename, "w");
