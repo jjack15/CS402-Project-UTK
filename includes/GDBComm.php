@@ -167,7 +167,7 @@ class GDBComm
                 $trace_step->set_line(intval($matches[1]));
                 preg_match('/func="([A-Za-z0-9_]*)"/', $f, $matches);
                 $trace_step->set_func_name($matches[1]);
-                //$f = fgets($this->pipes[1]);
+                $f = fgets($this->pipes[1]);
                 break;
             }
         }
