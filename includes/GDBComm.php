@@ -263,9 +263,17 @@ class GDBComm
                         return 1;
                     }
                     preg_match('/line="([0-9]*)"/', $f, $line_match);
-                    if (isset($line_match[1])) $trace_step->set_line($line_match[1]);
-                    preg_match('/value={old="[-0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
-                    $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
+                    if (isset($line_match[1])) $trace_step->set_line($line_match[1]);  
+                    if ($this->local_vars[$watchpoint_match[1]]->get_type() == "char") {
+                        //echo $f;
+                        preg_match('/old="[0-9]*\'[\\\0-9A-Za-z]*\'",new="[0-9]*\'([A-Za-z]*)\'"/', $f, $new_value);
+                        //print_r($new_value);
+                        $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
+                    }
+                    else {
+                        preg_match('/value={old="[-0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
+                        $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
+                    }
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
                     //preg_match('/func="([a-zA-Z0-9:]*)
                     break;
