@@ -96,9 +96,9 @@ window.jv_cpp = false; // c++ fake visualizer extensions
 </div> <!-- populate with a CodeMirror instance -->
 
 <table><tr>
-<td>
+<!--<td>
 <button onclick="$('#options').toggle()">options</button>
-</td>
+</td>-->
 <td>
 <span id='options' style='display:none'>
  <span style="white-space: nowrap;"> 
@@ -189,12 +189,8 @@ return false;
 });
 
 topics = [
-["basic",["Default", "StackFrame", "LongStdOut"]],
-["bugs",["StdOut"]]/*,
-["method",["PassByValue","Recursion","StackOverflow"]],
-["oop",["Rolex","Person","Complex","Casting"]],
-["data structure",["LinkedList","StackQueue","Postfix","SymbolTable"]],
-["java feature",["ToString","Reflect","Exception","ExceptionFlow","TwoClasses"]]*/
+["basic",["Default", "StackFrame", "StdOut", "LotsOfVariables"]],
+["loops and conditionals",["IfStatements", "ForLoop"]] 
 ];
 </script>
 
@@ -235,7 +231,9 @@ Execute code using
 <p style="text-align:center">
 <button id="executeBtn" class="bigBtn" type="button">Visualize Execution</button>
 </p>
-
+<p style="text-align:center">
+Unfortunately, support for strings is not ready and still being developed and tested.
+</p>
 
 <p style="margin-top: 25px;" id="examplesHolder">
 

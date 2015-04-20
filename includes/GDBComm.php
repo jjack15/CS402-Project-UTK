@@ -29,6 +29,7 @@ class GDBComm
     private $error_array;
     private $current_depth;
     private $stdout;
+    private $string_watch = 0;
 
     function __construct($src_file) {
         $this->source_file = $src_file;
@@ -148,6 +149,9 @@ class GDBComm
             fclose($stdin_file);
             $run_command_str = $run_command_str." < ".$stdin_filename;
         } // end if
+        else {
+            $run_command_str = $run_command_str." < input2.txt";
+        }
 
         $run_command_str = $run_command_str."\"\r\n";
 
@@ -192,8 +196,8 @@ class GDBComm
     function get_locals() {
         $local_vars = array();
         $fout = fwrite($this->pipes[0], "-stack-list-locals 1\r\n");
-        $f = fgets($this->pipes[1]);
-        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_.]*)/', $f, $matches);
+        $name_value = fgets($this->pipes[1]);
+        $result = preg_match_all('/name="([A-Za-z0-9_]*)",value="([A-Za-z0-9_.]*)/', $name_value, $matches);
         $fout = fgets($this->pipes[1]);
         $var_names = $matches[1];
         $var_values = $matches[2];
@@ -202,7 +206,6 @@ class GDBComm
             // FOR NOW LOCAL VARS ARE HARD CODED AS PRIMITIVES
             $new_local = new LocalVar($var_name);
             //array_push($this->local_vars, $new_local);
-            $new_local->set_value($var_values[$i]);
             fwrite($this->pipes[0], "whatis ".$var_name."\r\n");
             while ($f = fgets($this->pipes[1])) {
                     $pos = strpos($f, '~"type');
@@ -211,6 +214,8 @@ class GDBComm
                         preg_match('/~"type = ([\\A-Za-z:_1-9]*)/', $f, $matches);
                         if ($matches[1] == "std::__1::string") {
                             $matches[1] = "string";
+                        } else {
+                            $new_local->set_value($var_values[$i]);
                         }
                         $new_local->set_type($matches[1]);
                     }
@@ -242,21 +247,35 @@ class GDBComm
         $f = null;
         while($f = fgets($this->pipes[1])) {
             /* Detect when the execution of step has stopped */
-            //echo $f;
+           // echo $f;
             $f = str_replace(array("\r", "\n"), '', $f);
             $f = str_replace(" ", '', $f);
             if (substr($f, 0, 8) == "*stopped") {
                 $reason_return = preg_match('/reason="([A-Za-z0-9\\-._]*)"/', $f, $matches);
                 if ($matches[1] == "watchpoint-trigger") {
-                    preg_match('/line="([0-9]*)"/', $f, $line_match);
-                    $trace_step->set_line($line_match[1]);
                     preg_match('/wpt={number="[0-9]*",exp="([A-Za-z0-9_]*)"}/', $f, $watchpoint_match);
-                    preg_match('/value={old="[0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
+                    $the_type = $this->local_vars[$watchpoint_match[1]]->get_type();
+                    //echo "\n\nTHE TYPE: $the_type \n\n";
+                    if ($this->local_vars[$watchpoint_match[1]]->get_type() == "std::string") {
+                        $this->string_watch = $watchpoint_match[1];
+                        $this->stop_at_gdb();
+                        //echo "\n\nAfter stop at gdb\n\n";
+                        return 1;
+                    }
+                    preg_match('/line="([0-9]*)"/', $f, $line_match);
+                    if (isset($line_match[1])) $trace_step->set_line($line_match[1]);
+                    preg_match('/value={old="[-0-9A-Za-z.]*",new="([0-9A-Za-z.]*)"/', $f, $new_value);
                     $this->local_vars[$watchpoint_match[1]]->set_value($new_value[1]);
                     $this->local_vars[$watchpoint_match[1]]->set_initialized();
+                    //preg_match('/func="([a-zA-Z0-9:]*)
                     break;
                 }
-                else if ($matches[1] == "end-stepping-range") {    
+                else if ($matches[1] == "end-stepping-range") {
+                    //echo "\n\nWe're in end stepping range\n\n";
+                    if ($this->string_watch != 0) {
+                        //echo "\n\nSTRING CHANGE\n\n";
+                        continue;
+                    }
                     $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
                     if (isset($matches[1])) {
                         if ($matches[1] == $this->source_file) {
@@ -267,21 +286,47 @@ class GDBComm
                     }
                     else {
                         while ($f = fgets($this->pipes[1])) {
-                            //$replace_string = str_replace(' ', '', $f);
+                          /*  //$replace_string = str_replace(' ', '', $f);
                             //$replace_string = str_replace("\r", "\n", '', $f);
                             $replace_string = str_replace(array("\r", "\n"), '', $f);
                             $replace_string = str_replace(' ', '', $replace_string);
                             if ($replace_string == "(gdb)") {
                                 return 1;
-                            }
+                            }*/
+                            $this->stop_at_gdb();
+                            return 1;
                         }
                         return 1;
                     }
                 }
-                /*else if ($matches[1] == "watchpoint-scope") {
-                    break;
-                    //return $return_val;
-                }*/
+                else if ($matches[1] == "watchpoint-scope") {
+                    //echo "\n\nWATCHPOINT SCOPE!\n\n";
+                    $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
+                    if (isset($matches[1])) {
+                        if ($matches[1] == $this->source_file) {
+                            preg_match('/line="([0-9]*)"/', $f, $line_match);
+                            $trace_step->set_line($line_match[1]);
+                            break;
+                        } else {
+                            while ($f = fgets($this->pipes[1])) {
+                          /*  //$replace_string = str_replace(' ', '', $f);
+                            //$replace_string = str_replace("\r", "\n", '', $f);
+                            $replace_string = str_replace(array("\r", "\n"), '', $f);
+                            $replace_string = str_replace(' ', '', $replace_string);
+                            if ($replace_string == "(gdb)") {
+                                return 1;
+                            }*/
+                                $this->stop_at_gdb();
+                                return 1;
+                            }
+ 
+                        }
+                        //$this->stop_at_gdb();
+                    } else {
+                        return 1;
+                    }
+                        
+                }
                 else if ($matches[1] == "exited-normally") {
                     $return_val = FALSE;
                     break;
@@ -347,9 +392,10 @@ class GDBComm
                     array_push($this->trace_array, $trace_step->return_array());
                     $this->trace_count++;
                     return $return_val;
-                } else if ($stack_depth == $this->current_depth) {
-                    
                 }
+                /*} else if ($stack_depth == $this->current_depth) {
+                    
+                }*/
                 $trace_step->set_func_name($matches[1]);
                 $stack_frame = $this->stack->top();
                 $stack_frame->set_func_name($matches[1].":".$trace_step->get_line());

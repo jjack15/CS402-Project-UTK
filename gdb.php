@@ -33,7 +33,7 @@
         }
 
         /* Start GDB with the program running in debug mode */
-	$gdbcomm->start($stdin);
+        $gdbcomm->start($stdin);
         $gdbcomm->get_locals();
         while ($gdbcomm->take_step());
         $gdbcomm->finish();

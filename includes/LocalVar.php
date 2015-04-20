@@ -29,10 +29,18 @@ class LocalVar {
         if ($this->type == "int") $returnval = intval($this->value);
         elseif ($this->type == "double") $returnval = floatval($this->value);
         elseif ($this->type == "float") $returnval = floatval($this->value);
-        elseif ($this->type == "bool") $returnval = boolval($this->value);
+        elseif ($this->type == "bool") {
+            //echo "THIS TYPE $this->type";
+            if (str_replace(array(" ", "\n"), '', $this->value) == "true") $returnval = true;
+            else $returnval = false;
+        }
         return $returnval;
     }
     
+    public function get_type() {
+        return $this->type;
+    }
+
     public function is_initialized() {
         return $this->is_initialized;
     }
