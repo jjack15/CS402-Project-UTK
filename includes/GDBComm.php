@@ -162,7 +162,7 @@ class GDBComm
                 $trace_step->set_line(intval($matches[1]));
                 preg_match('/func="([A-Za-z0-9_]*)"/', $f, $matches);
                 $trace_step->set_func_name($matches[1]);
-                $f = fgets($this->pipes[1]);
+             //   $f = fgets($this->pipes[1]);
                 break;
             }
         }
@@ -347,6 +347,8 @@ class GDBComm
                     array_push($this->trace_array, $trace_step->return_array());
                     $this->trace_count++;
                     return $return_val;
+                } else if ($stack_depth == $this->current_depth) {
+                    
                 }
                 $trace_step->set_func_name($matches[1]);
                 $stack_frame = $this->stack->top();

@@ -152,6 +152,12 @@ div.ExecutionVisualizer div#editCodeLinkDiv {
   font-size: 11pt;
 }
 
+div.ExecutionVisualizer div#reportBugLinkDiv {
+    text-align: center;
+    margin: 8px auto;
+    font-size: 11pt;
+}
+
 div.ExecutionVisualizer div#annotateLinkDiv {
   /*text-align: left;*/
   margin-top: 0px;

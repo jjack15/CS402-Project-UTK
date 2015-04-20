@@ -311,6 +311,7 @@ ExecutionVisualizer.prototype.render = function() {
     '<div id="codeDisplayDiv">\
        <div id="pyCodeOutputDiv"/>\
        <div id="editCodeLinkDiv"><a id="editBtn">Edit code</a></div>\
+       <div id="reportBugLinkDiv"><a id="reportBtn">Report bug</a></div>\
        <div id="executionSlider"/>\
        <div id="vcrControls">\
          <button id="jmpFirstInstr", type="button">&lt;&lt; First</button>\
@@ -432,11 +433,36 @@ ExecutionVisualizer.prototype.render = function() {
                                   {code: this.curInputCode},
                                   2);
     this.domRoot.find('#editBtn').attr('href', urlStr);
+    //console.log("HERE!");
+    //this.domRoom.find('#reportBtn').attr('href', "http://www.google.com");
   }
   else {
     this.domRoot.find('#editCodeLinkDiv').hide(); // just hide for simplicity!
     this.domRoot.find('#editBtn').attr('href', "#");
     this.domRoot.find('#editBtn').click(function(){return false;}); // DISABLE the link!
+    //this.domRoot.find('#reportBugLinkDiv').hide();
+    this.domRoot.find('#reportBtn').attr('href', "#");
+    this.domRoot.find('#reportBtn').click(function(){
+        //console.log(pyInputCodeMirror.getValue());/*
+        var reason = prompt("Please explain the problem", "Explanation");
+        var bug_report_script = "./bug_report.php";
+        var bug_package = {
+            user_script : pyInputCodeMirror.getValue(),
+            reason : reason
+        }
+        $.ajax({url: bug_report_script,
+                data: {data : JSON.stringify(bug_package)},
+                dataType: "json",
+                timeout: 5000,
+                error: function() {
+                    alert("I'm sorry but there was a problem sending your bug. Please tell us about this using the bug report bug report form.");
+                },
+                success: function(message) {
+                    alert("Thank you for reporting this bug. We'll work on it soon!");
+                }
+        })
+    });
+  
   }
 
   if (this.params.allowEditAnnotations !== undefined) {
@@ -483,14 +509,14 @@ ExecutionVisualizer.prototype.render = function() {
       if (myViz.editAnnotationMode) {
         myViz.enterViewAnnotationsMode();
 
-        myViz.domRoot.find("#jmpFirstInstr,#jmpLastInstr,#jmpStepBack,#jmpStepFwd,#executionSlider,#editCodeLinkDiv,#stepAnnotationViewer").show();
+        myViz.domRoot.find("#jmpFirstInstr,#jmpLastInstr,#jmpStepBack,#jmpStepFwd,#executionSlider,#editCodeLinkDiv,#stepAnnotationViewer,#reportBugLinkDiv").show();
         myViz.domRoot.find('#stepAnnotationEditor').hide();
         ab.html('Annotate this step');
       }
       else {
         myViz.enterEditAnnotationsMode();
 
-        myViz.domRoot.find("#jmpFirstInstr,#jmpLastInstr,#jmpStepBack,#jmpStepFwd,#executionSlider,#editCodeLinkDiv,#stepAnnotationViewer").hide();
+        myViz.domRoot.find("#jmpFirstInstr,#jmpLastInstr,#jmpStepBack,#jmpStepFwd,#executionSlider,#editCodeLinkDiv,#stepAnnotationViewer,#reportBugLinkDiv").hide();
         myViz.domRoot.find('#stepAnnotationEditor').show();
         ab.html('Done annotating');
       }

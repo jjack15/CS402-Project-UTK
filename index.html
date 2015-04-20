@@ -116,6 +116,11 @@ window.jv_cpp = false; // c++ fake visualizer extensions
   <label for='disableNesting'>
   Avoid nesting instances within instances
  </span>
+ <span style="white-space: nowrap;">
+  <input id='reportBug' type='checkbox'>
+  <label for ='reportBug' type='checkbox'>
+  Report bug
+ </span>
 </span> <!-- #options -->
 </td>
 </tr></table>
@@ -184,7 +189,7 @@ return false;
 });
 
 topics = [
-["basic",["Default"]],
+["basic",["Default", "StackFrame", "LongStdOut"]],
 ["bugs",["StdOut"]]/*,
 ["method",["PassByValue","Recursion","StackOverflow"]],
 ["oop",["Rolex","Person","Complex","Casting"]],

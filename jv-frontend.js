@@ -401,11 +401,11 @@ $(document).ready(function() {
   };
   
   // fetch uncategorized
-  $.ajax({
+  /*$.ajax({
     url: "./example-code/",
     success: populate_misc,
     error: function() {console.log("warning: couldn't read examples directory index");}
-  });
+  });*/
 
 
   // handle hash parameters passed in when loading the page
@@ -422,7 +422,7 @@ $(document).ready(function() {
   if (loadExample) {
       //console.log(loadExample);
       if (loadExample.match(/[a-zA-Z]+/))
-    exampleCallback(examplesDir+loadExample+".java")();
+    exampleCallback(examplesDir+loadExample+".cpp")();
   }
 
   // args, and only args, is parsed specially
@@ -530,7 +530,7 @@ var setOptions = function(lookup_function) {
   }
 
   // parse options
-  var optionNames = ['showStringsAsObjects', 'showAllFields', 'disableNesting'];
+  var optionNames = ['showStringsAsObjects', 'showAllFields', 'disableNesting', 'reportBug'];
   var someOption = false;
   for (var i=0; i<optionNames.length; i++) {
     var optionName = optionNames[i];
