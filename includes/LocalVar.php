@@ -1,5 +1,13 @@
 <?php
 
+/* 
+ * LocalVar.php
+ * Defines LocalVar class that represents a local variable in a stack frame.
+ * This class handles many different types of data including doubles, ints,
+ * chars, bools, and will eventually support more. This class can also tell
+ * when a variable has been initiliazed.
+*/
+
 class LocalVar {
     private $name;
     private $value;
@@ -30,7 +38,6 @@ class LocalVar {
         elseif ($this->type == "double") $returnval = floatval($this->value);
         elseif ($this->type == "float") $returnval = floatval($this->value);
         elseif ($this->type == "bool") {
-            //echo "THIS TYPE $this->type";
             if (str_replace(array(" ", "\n"), '', $this->value) == "true") $returnval = true;
             else $returnval = false;
         }

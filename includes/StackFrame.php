@@ -1,24 +1,31 @@
 <?php
 
+/*
+ * StackFrame.php
+ * Defines a StackFrame class which represents a stack frame within
+ * process execution. The primary features involves support for
+ * local variables.
+ */
+
 class StackFrame {
 	
 	private $name;
 	private $local_vars;
-        private $encoded_locals;
-        private $ordered_varnames;
-        private $frame_id;
-        private $func_name;
-        private $is_highlighted;
+    private $encoded_locals;
+    private $ordered_varnames;
+    private $frame_id;
+    private $func_name;
+    private $is_highlighted;
 	private $is_parent;
-        private $is_zombie;
-        private $parent_frame_id_list;
-        private $unique_hash;
-        private $all_locals;
+    private $is_zombie;
+    private $parent_frame_id_list;
+    private $unique_hash;
+    private $all_locals;
 
         function __construct($frame_name) {
             $this->name = $frame_name;
-	    $this->local_vars = array();
-	    $this->encoded_locals = array();
+            $this->local_vars = array();
+	    	$this->encoded_locals = array();
             $this->parent_frame_id_list = array();
             $this->all_locals = array();
             $this->is_highlighted = true;

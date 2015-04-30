@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Stack.php
+ * Defines stack class that holds StackFrames (but is not limited
+ * to this data type).
+ */
+
 class Stack {
 	
     private $stack;
@@ -20,9 +26,7 @@ class Stack {
 
     /* Return the stack frame on top of the stack */
     function top() {
-        //$top = current($this->stack);
         return $this->stack[0];
-        //return current($this->stack);
     }    
 
     function set_new_top($new_top) {

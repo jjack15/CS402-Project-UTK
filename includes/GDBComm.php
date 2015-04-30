@@ -4,42 +4,43 @@ require_once("Stack.php");
 require_once("StackFrame.php");
 require_once("TraceStep.php");
 
-/* This class is used for all communication to the GDB
-   process running, including compilation of the target
-   program, starting GDB, and quitting GDB */
+/* 
+* GDBComm.php
+* This class is used for all communication to the GDB
+* process running, including compilation of the target
+* program, starting GDB, and quitting GDB 
+*/
 
 class GDBComm
 {
-    private $source_file = NULL;
-    private $exec_file = NULL;
-    private $pipes;
-    private $descriptor;
-    private $process;
-    private $stopped = "*stopped";
-    private $current_line;
-    private $local_vars;
-    private $stack;
-    private $json_array;
-    private $trace_array;
-    private $ordered_locals;
-    private $debug;
-    private $frame_count;
-    private $output_folder = "output";
-    private $trace_count;
-    private $error_array;
-    private $current_depth;
-    private $stdout;
-    private $string_watch = 0;
+    private $source_file = NULL; 	// The relative file path of source file
+    private $exec_file = NULL; 		// The relative file path of the executable
+    private $pipes; 				// Pipes array used to communicate with GDB
+    private $descriptor;			// Assign pipes using this descriptor array (see constructor)
+    private $process; 				// Holds the process resource of the GDB process
+    private $current_line; 			// Holds the current line of execution
+    private $local_vars; 			// An array containing LocalVar structures of current local variables
+    private $stack; 				// A Stack structure containing StackFrames
+    private $json_array; 			// An array consisting of all information to be returned to front end
+    private $trace_array; 			// Array containing TraceElements
+    private $ordered_locals; 		// An array containing local variables in the order they appear
+    private $debug; 				// A flag telling if currently in debug mode
+    private $frame_count; 			// Global frame counter that must be increased on each new frame
+    private $output_folder; 		// The folder where all compiled programs go to
+    private $trace_count;			// Current trace number
+    private $error_array;			// Array containing error strings
+    private $current_depth;			// The current depth of stacks
+    private $stdout;				// String holding all standard out that is continually updated
+    private $string_watch = 0;		// Check for implementing strings (not working)
 
+    /* 
+     * Constructor takes the name of the source file and allocates arrays
+     * and other data structures needed during the execution.
+     */
     function __construct($src_file) {
         $this->source_file = $src_file;
         $this->exec_file = substr($src_file, 0, strlen($src_file)-4);
         $this->pipes = array();
-        $this->descriptor = array(
-                0 => array("pipe", "r"),
-                1 => array("pipe", "w"),
-                2 => array("pipe", "error-output.txt", "a")
-                );
         $this->stack = new Stack();
         $this->json_array = array();
         $this->ordered_locals = array();
@@ -48,10 +49,18 @@ class GDBComm
         $this->frame_count = 0;
         $this->trace_count = 0;
         $this->error_array = array();
+        $this->output_folder = "output";
+        $this->descriptor = array(
+                0 => array("pipe", "r"),
+                1 => array("pipe", "w"),
+                2 => array("pipe", "w")
+        );
     }
 
-    /* Keep reading standard output until reached (gdb) line. (gdb) usually marks
-    the end of standard out. */
+    /* 
+     * Keep reading standard output until reached (gdb) line. (gdb) usually marks
+     * the end of standard out.
+     */
     function stop_at_gdb() {
         while ($f = fgets($this->pipes[1])) {
             //echo $f;
@@ -61,11 +70,13 @@ class GDBComm
             }
         }
     }
-
+    
+    /* Set the source file */
     function set_source($in_source) {
         $this->source_file = $in_source;
     }
 
+    /* Set debug flag */
     function debug() {
         $this->debug = true;
     }
@@ -104,7 +115,6 @@ class GDBComm
         $info = proc_get_status($process);
         if ($info["running"] == FALSE) {
             if ($info["exitcode"]) {
-                //$this->error_array = array();
                 return 0;
             }
         }
@@ -113,29 +123,22 @@ class GDBComm
 
     /* Start the GDB instance and clear all the stdout */
     function start($program_input) {
-        $error = fopen("error.txt", "w");
-        fwrite($error, $this->exec_file);
-	$this->process = proc_open("./gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
-        if (is_resource($this->process)) fwrite($error, "YOOO");
+		$this->process = proc_open("./gdb --interpreter=mi $this->exec_file", $this->descriptor, $this->pipes);
         $about_proc = proc_get_status($this->process);
-        if ($about_proc["running"]) {
-            fwrite($error, "It's running");
-        }
-	while ($f = fgets($this->pipes[1])) {
-            fwrite($error, "STUFF");
+		while ($f = fgets($this->pipes[1])) {
             if ($f == "~\"done.\\n\"\n") {
                 $this->stop_at_gdb();
-		break;
-	    }
+				break;
+	    	}
         }
+        
         /* Set the breakpoint at main */
         $fout = fwrite($this->pipes[0], "set can-use-hw-watchpoints 0\r\n");
         $this->stop_at_gdb();
         $fout = fwrite($this->pipes[0], "-break-insert main\r\n");
         $this->stop_at_gdb();
-        /* Run GDB */
 
-        // Build run command string
+        /* Build run command string. Pipe standard out to a text file */
         $run_command_str = "interpreter-exec console \"r";
         $stdout_filename = "testing.txt";
         $run_command_str = $run_command_str." > ".$stdout_filename;
@@ -166,7 +169,6 @@ class GDBComm
                 $trace_step->set_line(intval($matches[1]));
                 preg_match('/func="([A-Za-z0-9_]*)"/', $f, $matches);
                 $trace_step->set_func_name($matches[1]);
-             //   $f = fgets($this->pipes[1]);
                 break;
             }
         }
@@ -183,7 +185,6 @@ class GDBComm
         $stack_frame->set_frame_id($this->frame_count++);
         $this->stack->push($stack_frame); 
         $stack_as_array = $this->stack->return_array();
-        //frame_count = frame_count + 1;
         $trace_step->set_stack($stack_as_array);
         array_push($this->trace_array, $trace_step->return_array());
 
@@ -205,7 +206,6 @@ class GDBComm
         foreach ($var_names as $var_name) {
             // FOR NOW LOCAL VARS ARE HARD CODED AS PRIMITIVES
             $new_local = new LocalVar($var_name);
-            //array_push($this->local_vars, $new_local);
             fwrite($this->pipes[0], "whatis ".$var_name."\r\n");
             while ($f = fgets($this->pipes[1])) {
                     $pos = strpos($f, '~"type');
@@ -226,7 +226,6 @@ class GDBComm
             $local_vars[$var_name] = $new_local;
             $i++;
         }
-        if ($this->debug) print_r($local_vars);
         $f = fgets($this->pipes[1]);
         return $local_vars;
     }
@@ -294,13 +293,6 @@ class GDBComm
                     }
                     else {
                         while ($f = fgets($this->pipes[1])) {
-                          /*  //$replace_string = str_replace(' ', '', $f);
-                            //$replace_string = str_replace("\r", "\n", '', $f);
-                            $replace_string = str_replace(array("\r", "\n"), '', $f);
-                            $replace_string = str_replace(' ', '', $replace_string);
-                            if ($replace_string == "(gdb)") {
-                                return 1;
-                            }*/
                             $this->stop_at_gdb();
                             return 1;
                         }
@@ -308,7 +300,6 @@ class GDBComm
                     }
                 }
                 else if ($matches[1] == "watchpoint-scope") {
-                    //echo "\n\nWATCHPOINT SCOPE!\n\n";
                     $return = preg_match('/file="([A-Za-z0-9._\/]*)"/', $f, $matches);
                     if (isset($matches[1])) {
                         if ($matches[1] == $this->source_file) {
@@ -317,13 +308,6 @@ class GDBComm
                             break;
                         } else {
                             while ($f = fgets($this->pipes[1])) {
-                          /*  //$replace_string = str_replace(' ', '', $f);
-                            //$replace_string = str_replace("\r", "\n", '', $f);
-                            $replace_string = str_replace(array("\r", "\n"), '', $f);
-                            $replace_string = str_replace(' ', '', $replace_string);
-                            if ($replace_string == "(gdb)") {
-                                return 1;
-                            }*/
                                 $this->stop_at_gdb();
                                 return 1;
                             }
@@ -452,11 +436,9 @@ class GDBComm
             $i++;
         }
         $trace_step->set_exception_msg($exception_msg);
-        //$trace_step->set_exception_msg($
         array_push($this->trace_array, $trace_step->return_array()); 
         $this->finish();
         echo $this->return_json();
-        //$trace_step->set_exception_msg("
     }
 
     function print_array() {
@@ -483,19 +465,24 @@ class GDBComm
         return $array;
     }
 
+    /* 
+     * Add the trace array to the json_array
+     */
     function finish() {
         $this->json_array["trace"] = $this->trace_array;
     }
     
+    /* 
+     * Encodes the array into a JSON string and returns it.
+     */
     function return_json() {
-        $final_file = fopen("final2.txt", "w");
-        fwrite($final_file, json_encode($this->json_array));
         return json_encode($this->json_array);
     }
 
     function close() {
         fclose($this->pipes[1]);
         proc_close($this->process);
+        // Eventually add delete file
     }
 }
 ?>
