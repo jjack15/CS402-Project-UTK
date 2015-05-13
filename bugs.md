@@ -22,7 +22,7 @@ Running this code will result in a server error because when returning from the 
 ### How to Fix
 Detect when you are looking for a variable that isn't in the current scope. (Check func="(name)" and make sure it equals the current function)
 
-## ~~cout deletes watchpoints~~
+## ~~cout deletes watchpoints
 Example code:
 
     #include <iostream>
@@ -39,7 +39,7 @@ Example code:
     }
 
 ### How to Fix
-The cause of this is the new "set can-use-ha-watchpoints 0" line. Watchpoints are deleted when gdb gets lines from other files (like when running the << operator).
+The cause of this is the new "set can-use-ha-watchpoints 0" line. Watchpoints are deleted when gdb gets lines from other files (like when running the << operator).~~
 
 ## Sub Blocks
 Example Code:
