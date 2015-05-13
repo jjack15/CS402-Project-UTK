@@ -2,9 +2,8 @@
 I'm going to try to explain how (mainly) GDBComm works, and how to use its methods.
 
 ## What needs to be implemented
-* Support for multiple stack frames
-* Support for more complex variables (vectors, classes)
-* Support for stdin, arguments
+* Support for more complex variables (vectors, classes, strings)
+* Support for stdin, arguments (implemented but not finished)
 * Support for uploading separate files
 * Run application using safeexec
 
