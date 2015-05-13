@@ -7,20 +7,22 @@ Example code:
     int test () {
     	int y;
     	y = 8;
-    	return y;    }
+    	return y;
+    }
     
     int main (int argc, char **argv) {
     	int x;
     	x = 100;
     	x = test();
-    	return 0;    }
+    	return 0;
+    }
     
 Running this code will result in a server error because when returning from the test function, it doesn't have the correct current list of variables in main.
 
 ### How to Fix
 Detect when you are looking for a variable that isn't in the current scope. (Check func="(name)" and make sure it equals the current function)
 
-## cout deletes watchpoints
+## ~~cout deletes watchpoints~~
 Example code:
 
     #include <iostream>
@@ -46,7 +48,8 @@ Example Code:
     x = 8;
     if (x == 8) {
     	int y;
-    	y = 8;    }
+    	y = 8;
+    }
 
 y will not be displayed on the frontend.
 
